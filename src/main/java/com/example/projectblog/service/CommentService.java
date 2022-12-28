@@ -1,11 +1,9 @@
 package com.example.projectblog.service;
 
-import com.example.projectblog.dto.CommentRequestDto;
 import com.example.projectblog.dto.CommentResponseDto;
 import com.example.projectblog.entity.Comment;
 import com.example.projectblog.entity.Post;
 import com.example.projectblog.entity.User;
-import com.example.projectblog.entity.UserRoleEnum;
 import com.example.projectblog.jwt.JwtUtil;
 import com.example.projectblog.repository.CommentRepository;
 import com.example.projectblog.repository.PostRepository;
@@ -16,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,13 +51,19 @@ public class CommentService {
                     () -> new IllegalArgumentException("존재하지 않는 글입니다.")
             );
 
-            List<Comment> commentList = post.getCommentList();
 
-            Comment comment = new Comment(commentUsername, commentComment, post);
+            Comment comment = new Comment(commentUsername, commentComment);
 
-            commentList.add(comment);
+            post.add(comment);
 
-            return new CommentResponseDto(user.getId(), post_id, comment);
+            Comment createdComment = commentRepository.save(comment);
+
+            return CommentResponseDto.builder()
+                    .id(createdComment.getId())
+                    .postId(post.getId())
+                    .userId(user.getId())
+                    .comment(createdComment)
+                    .build();
         } else {
             return null;
         }

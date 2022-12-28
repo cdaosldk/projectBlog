@@ -1,19 +1,16 @@
 package com.example.projectblog.service;
 
-import com.example.projectblog.dto.CommentRequestDto;
 import com.example.projectblog.dto.PostRequestDto;
 import com.example.projectblog.dto.PostResponseDto;
 import com.example.projectblog.entity.Comment;
 import com.example.projectblog.entity.Post;
 import com.example.projectblog.entity.User;
-import com.example.projectblog.entity.UserRoleEnum;
 import com.example.projectblog.jwt.JwtUtil;
 import com.example.projectblog.repository.PostRepository;
 import com.example.projectblog.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.converter.json.GsonBuilderUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +29,7 @@ public class PostService {
     private final JwtUtil jwtUtil;
 
     @Transactional
-    public PostResponseDto createPost(PostRequestDto postRequestDto,HttpServletRequest request) {
+    public PostResponseDto createPost(PostRequestDto postRequestDto, HttpServletRequest request) {
         String token = jwtUtil.resolveToken(request);
         Claims claims;
 

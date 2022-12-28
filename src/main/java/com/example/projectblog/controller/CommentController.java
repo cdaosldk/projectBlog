@@ -2,13 +2,10 @@ package com.example.projectblog.controller;
 
 import com.example.projectblog.dto.CommentRequestDto;
 import com.example.projectblog.dto.CommentResponseDto;
-import com.example.projectblog.entity.Comment;
 import com.example.projectblog.service.CommentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

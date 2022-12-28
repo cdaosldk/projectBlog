@@ -31,8 +31,8 @@ public class Post extends Timestamped {
     @Column
     private String contents;
 
-    @JsonManagedReference
-    @OneToMany(cascade = CascadeType.ALL)// 연관관계 설정, 비어있는 코멘트 리스트 생성
+    @JsonManagedReference // 순환참조 문제
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "post")// 연관관계 설정, 비어있는 코멘트 리스트 생성, 영속성 관리
     private List<Comment> commentList = new ArrayList<>();
 
 //    @Builder
@@ -44,6 +44,11 @@ public class Post extends Timestamped {
         this.commentList = commentList;
     }
 
+    public void add(Comment comment) {
+        comment.setPost(this); // comment -> post 주입
+        getCommentList().add(comment); // post의 commentList에 comment 주입
+    }
+
 //    public static Post createPost(String title, String username, String contents, Long userId) {
 //        return Post.builder()
 //                .userId(userId)
@@ -51,10 +56,6 @@ public class Post extends Timestamped {
 //                .username(username)
 //                .contents(contents)
 //                .build();
-//    }
-
-//    public void putCommentList(Comment comment) {
-//        commentList.add(comment);
 //    }
 
 //    public void update(PostRequestDto postRequestDto) {

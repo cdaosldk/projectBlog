@@ -1,5 +1,6 @@
 package com.example.projectblog.entity;
 
+import com.example.projectblog.dto.CommentRequestDto;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -34,8 +35,8 @@ public class Comment extends Timestamped {
         this.comment = comment;
     }
 
-//    public void update(CommentRequestDto commentRequestDto) {
-//        this.username = commentRequestDto.getUsername();
-//        this.comment = commentRequestDto.getComment();
-//    }
+    public void update(CommentRequestDto commentRequestDto) {
+        this.username = commentRequestDto.getUsername();
+        this.comment = commentRequestDto.getComment();
+    }
 }

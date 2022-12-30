@@ -134,6 +134,32 @@ Jackson의 동작원리를 보고 관련 어노테이션인 @JsonBackReference, 
 
 (2) ResponseDto타입의 객체를 만들어 거기에 완성된 값을 담고 반환한 후 그 객체를 참조하여 순환참조 에러를 원천 차단하는 방식에 대한 이해가 아직 부족함 ~ 이렇게 처리되는 게 맞는지 아닌지도 아직 확실하지 않음
 
+22.12.28
+
+1) 댓글 생성 메서드의 퀄리티 높이기
+
+@OneToMany(cascade = CascadeType.All) List<Comment> commentList = new ArrayList<>();에서 만들어지는 Post-CommentList 테이블로 인해 마치 다대다 관계에서 처리하는 것같이 값을 저장하는 부분 개선 노력
+
+https://wordbe.tistory.com/entry/Spring-Data-Jpa-JPA
+
+cascade : 연관관계가 있는 엔티티의 변화를 반영한다
+
+fetch : 객체를 가져온다
+
+https://www.youtube.com/watch?v=brE0tYOV9jQ
+
+https://www.youtube.com/watch?v=hsSc5epPXDs
+
+2) 더티체킹에 대한 경험치 +1 :
+
+내가 코멘트 객체를 만들고 ResponseDto타입 객체로 반환하기 전에 DB에 저장을 하지 않았지만 DB에 저장이 된 이유:
+
+Post타입의 객체를 만들 때 JPA가 내가 지시하지 않았어도 1차 캐시 공간에 미리 만들어진 Post타입의 객체가 있는지 확인한다. 이후 없을 때 새로 만들어서 1차 캐시 공간에 저장한다.
+
+그 후 @Transactional 주기가 끝날 때, 나는 그 전에 Comment 타입의 객체를 만들고 그 곳에 RequestDto타입에서 받은 값을 할당한 후 그 객체를 Post 클래스에서 참조한 commentList에 추가하고 주기를 끝낸다.
+
+그렇게 되면 JPA는 더티체킹을 하며, post.commentList에 변화가 있다는 것을 알게 되고, 내가 별도로 명령하지 않아도 DB에 변경된 값인, comment가 추가된 commentList를 저장하는 것이다.
+
 
 연관관계 설정 :
 

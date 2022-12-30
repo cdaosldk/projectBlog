@@ -13,19 +13,19 @@ public class CommentController {
 
     private final CommentService commentService;
 
-    @PostMapping("/api/posts/{post_id}/comment")
+    @PostMapping("/api/posts/{post_id}/comments")
     public CommentResponseDto createComment(@PathVariable Long post_id, @RequestBody CommentRequestDto commentRequestDto, HttpServletRequest request) {
         String username = commentRequestDto.getUsername();
         String comment = commentRequestDto.getComment();
         return commentService.createComment(post_id, username, comment, request);
     }
 
-//    @PutMapping("/api/posts/{id}/{commentId}")
-//    public void updateComment(@PathVariable Long id, @PathVariable Long commentId, HttpServletRequest request, CommentRequestDto commentRequestDto) {
-//        commentService.update(id, commentId, request, commentRequestDto);
-//    }
+    @PutMapping("/api/posts/{id}/comments/{commentsId}")
+    public void updateComment(@PathVariable Long id, @PathVariable Long commentsId, HttpServletRequest request, @RequestBody CommentRequestDto commentRequestDto) {
+        commentService.update(id, commentsId, request, commentRequestDto);
+    }
 //
-//    @DeleteMapping("/api/posts/{id}/{commentId}")
+//    @DeleteMapping("/api/posts/{id}/{commentsId}")
 //    public String deleteComment(@PathVariable Long id, @PathVariable Long commentId,HttpServletRequest request) {
 //        return commentService.delete(id, commentId, request);
 //    }

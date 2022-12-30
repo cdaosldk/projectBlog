@@ -58,9 +58,9 @@ public class Post extends Timestamped {
 //                .build();
 //    }
 
-//    public void update(PostRequestDto postRequestDto) {
-//        this.title = postRequestDto.getTitle();
-//        this.username = postRequestDto.getUsername();
-//        this.contents = postRequestDto.getContents();
-//    }
+    public void update(PostRequestDto postRequestDto) {
+        this.title = postRequestDto.getTitle();
+        this.username = postRequestDto.getUsername();
+        this.contents = postRequestDto.getContents();
+    }
 }

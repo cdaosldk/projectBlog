@@ -32,10 +32,10 @@ public class PostController {
         return postService.getPostById(id);
     }
 
-//    @PutMapping("/api/posts/{id}")
-//    public void updatePost(@PathVariable Long id, HttpServletRequest request, @RequestBody PostRequestDto postRequestDto) {
-//        postService.update(id, request, postRequestDto);
-//    }
+    @PutMapping("/api/posts/{id}")
+    public void updatePost(@PathVariable Long id, HttpServletRequest request, @RequestBody PostRequestDto postRequestDto) {
+        postService.update(id, request, postRequestDto);
+    }
 //
 //    @DeleteMapping("/api/posts/{id}")
 //    public String deletePost(@PathVariable Long id, HttpServletRequest request) {

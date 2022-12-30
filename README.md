@@ -7,11 +7,11 @@ JWT를 활용하기
 
 JPA 연관관계 설정
 
-1. ERD (Entity Relation Diagram)
+# 1. ERD (Entity Relation Diagram)
    
 ![projectBlog](https://user-images.githubusercontent.com/110814973/210074719-5a409431-08b5-4020-b3bf-ffdef08c9aaa.png)
 
-2. API 명세서
+# 2. API 명세서
 
 2-1 숙련 Lv 1
 
@@ -28,7 +28,7 @@ JPA 연관관계 설정
 2) 수정하는 기능
 
 
-3. 프로젝트 시작
+# 3. 프로젝트 시작
    추가하는 클래스
 
 Entity User
@@ -167,7 +167,7 @@ Post타입의 객체를 만들 때 JPA가 내가 지시하지 않았어도 1차 
 
 수정/ 삭제 기능도 동일하게 적용, 다만 저번 과제 때 boolean으로 접근해 만들어둔 비밀번호 확인 기능이 더 이상 필요가 없어 수정/ 삭제 메서드 및 PostController에 있는 관련 메서드의 타입을 void로 변경 + 12.19일 트러블 슈팅과 연관되는 내용
 
-4. 체크포인트
+# 4. 체크포인트
 
 처음 설계한 API 명세서에 변경사항이 있었나요? 변경 되었다면 어떤 점 때문 일까요? 첫 설계의 중요성에 대해 작성해 주세요!
 
@@ -205,15 +205,15 @@ IoC / DI 에 대해 간략하게 설명해 주세요!
 
 
 ======================================================================================================================================================
-1. Usecase 작성
+# 1. Usecase 작성
 ![img](https://user-images.githubusercontent.com/110814973/206435978-5dbd3c82-e741-4b25-831f-014eea9f7ce4.png)
 
 
-2. API 설계 CRUD
+# 2. API 설계 CRUD
 ![image](https://user-images.githubusercontent.com/110814973/206610813-d2184c5f-d331-4ca7-a69d-e9046a30cd3d.png)
 
 
-3. 프로젝트 시작
+# 3. 프로젝트 시작
 
 ** 엔티티는 DB의 테이블( 객체 지향적 언어의 속성을 살려 자바 관점에서 본 객체 )과 속성이 같아야 한다.
 
@@ -266,7 +266,7 @@ Post 생성자를 만들 때 Dto 인자를 주입하며 @RequestBody를 사용�
 
 
 
-4. API 명세서 작성 및 질문에 대한 고민
+# 4. API 명세서 작성 및 질문에 대한 고민
 ![1](https://user-images.githubusercontent.com/110814973/206437010-ca0a73ec-71c4-4748-8932-f1128a913d10.png)
 ![2](https://user-images.githubusercontent.com/110814973/206437020-e8779df6-77ef-4c3b-9f16-3ee2b47a7199.png)
 

@@ -2,7 +2,7 @@ package com.example.projectblog.entity;
 
 import com.example.projectblog.dto.CommentRequestDto;
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

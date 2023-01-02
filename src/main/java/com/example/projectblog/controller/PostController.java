@@ -4,7 +4,7 @@ import com.example.projectblog.dto.PostRequestDto;
 import com.example.projectblog.dto.PostResponseDto;
 import com.example.projectblog.entity.Post;
 import com.example.projectblog.service.PostService;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

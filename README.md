@@ -8,7 +8,7 @@ JWT를 활용하기
 JPA 연관관계 설정
 
 # 1. ERD (Entity Relation Diagram)
-![projectBlog](https://user-images.githubusercontent.com/110814973/210074719-5a409431-08b5-4020-b3bf-ffdef08c9aaa.png)
+![image](https://user-images.githubusercontent.com/110814973/210193564-d6493543-6bd8-48f9-81f2-a9c08ad068c5.png)
 
 # 2. API 명세서
 

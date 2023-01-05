@@ -47,9 +47,9 @@ public class PostService {
                     () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
             );
 
-            List<Comment> commentList = new ArrayList<>();
+//            List<Comment> commentList = new ArrayList<>();
 
-            Post post = postRepository.saveAndFlush(new Post(postRequestDto, user.getId(), commentList));
+            Post post = postRepository.saveAndFlush(new Post(postRequestDto, user));
 
             return new PostResponseDto(postRepository.save(post));
         } else {

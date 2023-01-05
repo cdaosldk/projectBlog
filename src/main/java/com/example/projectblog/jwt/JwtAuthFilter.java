@@ -1,5 +1,7 @@
 package com.example.projectblog.jwt;
 
+import com.example.projectblog.dto.SecurityExceptionDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +29,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = jwtUtil.resolveToken(request);
 
         // 1. token이 null값인지 체크 2. 유효한 토큰인지 체크 3. Claims 타입을 활용한 토큰 정보를 가져오기
-        // 4. 사용자 정보 중 이름을 가져와 serAuthentication 메서드에 인자로 보냄 ~ 인증객체 생성
+        // 4. 사용자 정보 중 이름을 가져와 setAuthentication 메서드에 인자로 보냄 ~ 인증객체 생성
         if(token != null) {
             if(!jwtUtil.validateToken(token)) {
                 jwtExceptionHandler(response, "Token Error", HttpStatus.UNAUTHORIZED.value());
@@ -46,5 +48,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         context.setAuthentication(authentication);
 
         SecurityContextHolder.setContext(context);
+    }
+
+    // 토큰 오류가 발생한 경우, Exception 결과값을 사용자에게 반환한다
+    public void jwtExceptionHandler(HttpServletResponse response, String msg, int statusCode) {
+        response.setStatus(statusCode);
+        response.setContentType("application/json");
+        try {
+            // ObjectMapper를 통해 변환한다
+            String json = new ObjectMapper().writeValueAsString(new SecurityExceptionDto(statusCode, msg));
+            response.getWriter().write(json);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
     }
 }

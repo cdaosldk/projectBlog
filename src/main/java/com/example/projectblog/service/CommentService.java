@@ -2,17 +2,17 @@ package com.example.projectblog.service;
 
 import com.example.projectblog.dto.CommentRequestDto;
 import com.example.projectblog.dto.CommentResponseDto;
-import com.example.projectblog.entity.Comment;
-import com.example.projectblog.entity.Post;
-import com.example.projectblog.entity.User;
-import com.example.projectblog.entity.UserRoleEnum;
+import com.example.projectblog.dto.MessageResponseDto;
+import com.example.projectblog.entity.*;
 import com.example.projectblog.jwt.JwtUtil;
+import com.example.projectblog.repository.CommentLikeRepository;
 import com.example.projectblog.repository.CommentRepository;
 import com.example.projectblog.repository.PostRepository;
 import com.example.projectblog.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +22,8 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
 
+    private final CommentLikeRepository commentLikeRepository;
+
     private final UserRepository userRepository;
 
     private final PostRepository postRepository;
@@ -29,7 +31,7 @@ public class CommentService {
     private final JwtUtil jwtUtil;
 
     @Transactional
-    public CommentResponseDto createComment(Long post_id, String commentUsername, String commentComment, HttpServletRequest request) {
+    public CommentResponseDto createComment(Long post_id, CommentRequestDto commentRequestDto, HttpServletRequest request) {
         String token = jwtUtil.resolveToken(request);
         Claims claims;
 
@@ -51,7 +53,9 @@ public class CommentService {
             );
 
 
-            Comment comment = new Comment(commentUsername, commentComment);
+            Comment comment = new Comment(commentRequestDto, post, user);
+
+            int likeCount = 0;
 
             post.add(comment);
 
@@ -62,6 +66,7 @@ public class CommentService {
                     .postId(post.getId())
                     .userId(user.getId())
                     .comment(createdComment)
+                    .commentLike(likeCount)
                     .build();
         } else {
             return null;
@@ -138,5 +143,30 @@ public class CommentService {
         } else {
             throw new IllegalArgumentException("토큰이 유효하지 않습니다. StatusCode 400");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean checkCommentLike(Long commentId, User user) {
+        // 해당 회원의 좋아요 여부 확인
+        return commentLikeRepository.existsByCommentIdAndUserId(commentId, user.getId());
+    }
+
+    @Transactional
+    public MessageResponseDto commentLike(Long commentId, User user) {
+        // 입력받은 댓글 아이디와 일치하는 아이디가 있는 지 DB 조회
+        Comment comment = commentRepository.findById(commentId).orElseThrow(
+                () -> new IllegalArgumentException("댓글이 존재하지 않습니다.")
+        );
+
+        // 해당 회원의 좋아요 여부를 확인하고 비어있으면 좋아요, 아니면 좋아요 취소
+        if(!checkCommentLike(commentId, user)) {
+            commentLikeRepository.saveAndFlush(new CommentLike(comment, user));
+            return new MessageResponseDto("좋아요 완료", HttpStatus.OK.value());
+        } else {
+            commentLikeRepository.deleteByCommentIdAndUserId(commentId, user.getId());
+            return new MessageResponseDto("좋아요 취소", HttpStatus.OK.value());
+        }
+
+
     }
 }

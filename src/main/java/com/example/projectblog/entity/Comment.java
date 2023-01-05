@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Entity
+@Entity(name = "comment")
 @NoArgsConstructor
 public class Comment extends Timestamped {
 
@@ -23,6 +23,10 @@ public class Comment extends Timestamped {
     @Setter
     private Post post;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Column
     private String username;
 
@@ -30,13 +34,14 @@ public class Comment extends Timestamped {
     private String comment;
 
     @Builder
-    public Comment(String username, String comment) {
-        this.username = username;
-        this.comment = comment;
+    public Comment(CommentRequestDto commentRequestDto, Post post, User user) {
+        this.username = user.getUsername();
+        this.comment = commentRequestDto.getComment();
+        this.post = post;
+        this.user = user;
     }
 
     public void update(CommentRequestDto commentRequestDto) {
-        this.username = commentRequestDto.getUsername();
         this.comment = commentRequestDto.getComment();
     }
 }

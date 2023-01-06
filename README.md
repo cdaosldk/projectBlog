@@ -1,4 +1,180 @@
 # projectBlog
+#1. ERD
+![image](https://user-images.githubusercontent.com/110814973/210943656-3e44fd3a-a1c7-4f9e-bc8c-7a5f0b820cc4.png)
+
+
+#2.API 명세서
+2-1 심화 Lv1
+1) 새로 구현하는 기능 : Spring Security
+
+2) 수정하는 기능 :
+
+게시글 작성, 수정, 삭제 API의 인증과정을 Spring Security와 JWT 토큰 방식을 활용하여 토큰 검사 및 인증하기
+
+2-1 심화 Lv2
+1) 새로 구현하는 기능
+
+
+2) 수정하는 기능
+
+
+#3. 프로젝트 시작
+새로 추가하는 클래스
+
+WebSecurityConfig
+
+SecurityExceptionDto
+
+JwtAuthFilter
+
+ExceptionAOP - 아직 역할 및 구현에 대한 자세한 계획이 없음
+
+
+23.01.02
+
+Security 사용을 위한 준비 및 클래스 생성
+
+1) WebSecurityConfig
+
+@WebSecurity, @EnableGlobalMethodSecurity(securedEnabled = true), bCrypt를 활용한 비밀번호 암호화,
+
+WebSecurityCustomizer를 통한 인증처리 효율성 향상,
+
+SecurityFilterChain을 통한 CSRF 설정, 토큰 방식, permitAll() 사용, FormLogin 방식 사용시 로그인페이지 생성,
+
+예외가 발생한 경우 접근제한 페이지로 이동 설정
+
+2) JwtAuthFilter
+
+OncePerRequestFilter를 상속하여 HttpServletRequest와 HttpServletResponse를 인자로 받는 doFilterInternal 메서드를
+
+사용할 수 있다.
+
+doFilterInternal 메서드를 재정의
+
+1. token이 null값인지 체크
+
+2. 유효한 토큰인지 체크
+
+3. Claims 타입을 활용한 토큰 정보를 가져오기
+4. 사용자 정보 중 이름을 가져와 serAuthentication 메서드에 인자로 보냄 ~ 인증객체 생성
+
+5. FilterChain 인터페이스의 doFilter 추상메서드를 구현
+
+https://thecodinglog.github.io/spring/2020/04/28/spring-filter-chain.html
+
+https://gngsn.tistory.com/160
+
+setAuthenticaion : 인증 객체 설정 메서드
+
+
+01.03
+
+시큐리티에 대한 감을 좀 더 잡고자 공식문서 버전 6.0.1 읽기
+
+https://docs.spring.io/spring-security/reference/servlet/architecture.html#servlet-filters-review
+
+한글 해석본 구 버전 5.3.2 함께 읽기
+
+https://godekdls.github.io/Spring%20Security/servletsecuritythebigpicture/
+
+JwtAuthFilter : jwtExceptionHandler - 토큰 예외가 발생한 경우 처리하는 예외처리 메서드 작성
+
+JwtUtil 수정 : 인증 객체를 생성하는 createAuthentication 메서드 추가
+
+SecuriryExceptionDto : 시큐리티 관련 예외가 발생한 경우 상태코드와 해당 메세지를 인스턴스로 하는 Dto 생성
+
+
+01.04
+
+공식 문서 더 읽기
+
+시큐리티 관련 JwtUtil 안 메서드 : 
+
+createAuthtication ~ UserDetailsService 클래스의 loadUserByUsername으로 username 파라미터를 보내 유저 레포지토리에 일치하는 username이 있는 지 대조하고 있는 경우 사용자 정보와 username을 인스턴스로 하는 UserDetailsImpl 객체를 만들어 반환하고 이를 JwtUtil의 createAuthentication 메서드에서 UserDetails 타입의 변수에 할당한다. 이후 (principal)userDetails, (credentials)null, (authorities)userDetails.getAuthorities()를 인스턴스로 하는UsernamePasswordAuthenticationToken 타입의 객체를 만들어 반환한다.
+
+시큐리티 관련 JwtAuthFilter 안 메서드 : 
+
+doFilterInternal ~  HttpServletRequest의 요청으로 생성된 jwt 토큰을 가져와 유효한 토큰인지 검사하고, Claims 타입의 변수에 그 토큰 안에 담겨있는 사용자 정보를 할당하여 값을 저장한다. 이후 그 사용자 정보에서 username을 setAuthenticaion메서드에 파라미터로 보내 비어있는 Authenticaion 인증 객체에 사용자정보를 담을 수 있도록 한다.
+
+이후 WebSecurityConfig에서 회피한 요청/응답을 제외한 모든 요청/응답이 스프링 시큐리티에서 제공하는 SecurityFilterChain를 통하도록 하는 FilterChain 인터페이스의 doFIlter 메서드를 구현한다.
+
+setAuthenticaion ~ 먼저 SecurityContext 타입의 변수를 생성하고 거기에 SecurityContextHolder메서 만든 비어있는 Context를 할당한다. 그 후 Authentication 타입의 변수를 생성하고 jwt토큰을 활용해서 만든UsernamePasswordAuthentication 타입의 Authentication 객체를 할당한다. 그리고 Context에 그 Authentication 객체를 설정(set)하고 차례로 SecurityContextHolder에 그 Context를 저장함으로 인증 객체를 완성한다.
+
+UserDetails를 상속하는 UserDetailsImpl에 getAuthorities 메서드 재정의:
+
+UserRoleEnum의 Role을 조회하고 그 Role 안에 있는 authority를 조회(각 role은 내부 클래스 Authortity를 통해 유저 권한과 관리자 권한이 할당되어 있다)하여 권한을 확인한다. 그 권한을 GrantedAuthority 클래스를 상속하는 SimpleGrantedAuthority 타입의 객체에 담고, GrantedAuthority를 제너릭으로 사용하는 Collection 타입의 어레이 리스트를 만들고 난 후에 그 객체를 그 리스트에 추가한다. 그 후 그 리스트를 반환한다.
+
+
+*UserDetailsImpl은 상속하는 UserDetails 인터페이스 안에 있는 모든 추상메서드를 구현해야 한다.
+
+
+댓글 좋아요 기능 구현
+
+1. MessageResponseDto : 컨트롤러의 게시물 삭제, 좋아요, 댓글 삭제, 좋아요, 회원가입, 로그인 메서드에서 반환 타입인 Dto 생성 -> message와 stausCode를 필드값으로 한다.
+
+2. CommentService에서 commentLike 메서드 및 CommentController에서 commentLike 구현, 그러나 반환 타입에 대한 고민 ~ .. RepsonseEntity 타입에 관한 공부 및 사용 시도
+
+https://thalals.tistory.com/268
+
+https://devlog-wjdrbs96.tistory.com/182
+
+
+3. 좋아요 기능 구현을 위한 작업 수행
+
+1) CommentLikeRepository : CommentLike를 저장하는 레포지토리
+
+2) CommentLIke : Comment, User에 id값을 외래키로 하여 참조하는 @ManyToOne의 연관관계를 설정 
+
+3) CommentService 클래스에 checkCommentLike, commentLIke 메서드 생성
+
+-> checkCommentLike : CommentLikeRepository에 해당 댓글의 해당 유저의 좋아요가 있는지를 확인하는 메서드
+
+-> commentLIke : 해당 회원의 댓글좋아요 객체가 레포지토리에 있는지 확인하고 없으면 좋아요, 있으면 좋아요 취소하는 메서드 
+
+4) CommentController 클래스에 commentLike 메서드 생성
+
+-> CommentService의 댓글 좋아요 메서드와 클라이언트의 요청을 매칭시키는 메서드
+
+5) 빌더 어노테이션을 사용해 댓글을 생성 및 CommentResponseDto로 반환할 때 int likeComment를 생성 및 0을 할당한 후, 해당 변수를 객체 생성 시 인스턴스로 주입, 해당 객체 엔티티에서는 필드를 선언하고, 좋아요 카운트를 위한 필드를 생성자를 이용해 초기화한다.
+
+
+01. 05
+
+댓글 좋아요 기능을 작성하고 디버깅하니 만난 에러 : PropertyReferenceException
+
+-> 종합적으로 여러 군데를 살펴보다가 내린 결론 및 시도 : 성공
+
+일대다 관계에 있는 엔티티, 칼럼에 @OneToMany를 추가했다.
+
+ 고민 : @OneToMany를 꼭 필요한 경우에만 추가해야 하는데, 언제가 꼭 필요한 순간인지 아직 잘 모르겠다.
+
+ex) 상품 주문 시 주문의 관점 : 주문은 주문 아이템이 있어야 존재 가능하므로 @OneToMany 필수
+
+
+#4. 체크포인트
+Spring Security를 적용했을 때 어떤 점이 도움이 되셨나요?
+
+기존에 메서드마다 Jwt토큰을 활용한 인증/인가 과정을 거쳤어야 했는데, 이를 스프링 시큐리티가 제공하는 SecurityFilterChain에서 수행하게 한 덕분에 코드가 훨씬 간결해졌다.
+
+
+IoC / DI 에 대해 간략하게 설명해 주세요! - 숙련주차의 답변을 Upgrade 해 주세요!
+
+특별히 이 부분에 대해선 더 성장한 점을 아직 못 느끼겠다. ~ 추후 다시 적어보기
+
+
+JWT를 사용하여 인증/인가를 구현 했을 때의 장점은 무엇일까요? - 숙련주차의 답변을 Upgrade 해 주세요!
+
+토큰이라는 형식에 맞춘 스프링 시큐리티의 인증인가 절차가 제공되므로, 개발자는 좀 더 편하게 인증/인가 절차를 진행할 수 있다는 점인 것 같다.
+
+
+반대로 JWT를 사용한 인증/인가의 한계점은 무엇일까요? - 숙련주차의 답변을 Upgrade 해 주세요!
+
+각 메서드마다 인증/인가를 구현해야하는 단점이 매우 크다.
+
+
+======================================================================================================================================================
+
 이번에 시도하는 것들 :
 
 ERD

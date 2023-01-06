@@ -5,15 +5,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter
 @NoArgsConstructor
 public class CommentResponseDto {
 
     private Long id;
-
-    private Long userId;
-
-    private Long postId;
 
     private String username;
 
@@ -21,13 +19,17 @@ public class CommentResponseDto {
 
     private int commentLike;
 
+    private LocalDateTime createdAt;
+
+    private LocalDateTime modifiedAt;
+
     @Builder
-    public CommentResponseDto(Long id, Long userId, Long postId, Comment comment, int commentLike) {
-        this.id = id;
-        this.userId = userId;
-        this.postId = postId;
+    public CommentResponseDto(Comment comment, int commentLike) {
+        this.id = comment.getId();
         this.username = comment.getUsername();
         this.comment = comment.getComment();
         this.commentLike = commentLike;
+        this.createdAt = comment.getCreatedAt();
+        this.modifiedAt = comment.getModifiedAt();
     }
 }

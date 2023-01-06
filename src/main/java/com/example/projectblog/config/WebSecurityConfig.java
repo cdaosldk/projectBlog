@@ -47,8 +47,6 @@ public class WebSecurityConfig {
 
         // permitAll()을 사용하여 해당 URL을 인증하지 않고 요청에 응답
         http.authorizeRequests().antMatchers("/api/user/**").permitAll()
-                .antMatchers("/api/search").permitAll()
-                .antMatchers("/api/shop").permitAll()
                 .anyRequest().authenticated()
                 // Jwt 토큰을 활용한 인증/인가 설정, CustomFilter 틍록, addFilterBefore(추가할 필터, 추가되는 필터의 다음 필터)
                 // UsernamePasswordAuthenticationFilter : FormLogin 형식을 사용할 때 username과 password를 사용한 인증

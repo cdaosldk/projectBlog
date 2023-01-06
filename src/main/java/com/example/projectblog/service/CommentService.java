@@ -53,21 +53,13 @@ public class CommentService {
             );
 
 
-            Comment comment = new Comment(commentRequestDto, post, user);
+            Comment comment = commentRepository.save(new Comment(commentRequestDto, post, user));
 
             int likeCount = 0;
 
             post.add(comment);
 
-            Comment createdComment = commentRepository.save(comment);
-
-            return CommentResponseDto.builder()
-                    .id(createdComment.getId())
-                    .postId(post.getId())
-                    .userId(user.getId())
-                    .comment(createdComment)
-                    .commentLike(likeCount)
-                    .build();
+            return new CommentResponseDto(comment, likeCount);
         } else {
             return null;
         }

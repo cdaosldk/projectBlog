@@ -17,18 +17,18 @@ public class CommentResponseDto {
 
     private String comment;
 
-    private int commentLike;
+    private int likeComment;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime modifiedAt;
 
     @Builder
-    public CommentResponseDto(Comment comment, int commentLike) {
+    public CommentResponseDto(Comment comment, int likeComment) {
         this.id = comment.getId();
         this.username = comment.getUsername();
         this.comment = comment.getComment();
-        this.commentLike = commentLike;
+        this.likeComment = likeComment;
         this.createdAt = comment.getCreatedAt();
         this.modifiedAt = comment.getModifiedAt();
     }

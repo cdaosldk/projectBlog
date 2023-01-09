@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.ArrayList;
 import java.util.Collection;
 
+@Getter
 public class UserDetailsImpl implements UserDetails {
 
     private final User user;
@@ -19,10 +20,6 @@ public class UserDetailsImpl implements UserDetails {
     public UserDetailsImpl(User user, String username) {
         this.user = user;
         this.username = username;
-    }
-    // getter가 있어도 안된다????
-    public User getUser() {
-        return user;
     }
 
     @Override
@@ -37,6 +34,7 @@ public class UserDetailsImpl implements UserDetails {
         return authorities;
     }
 
+    // 인터페이스를 구현하는 경우 그 인터페이스가 갖고 있는 모든 메서드를 구현해야 한다.
     @Override
     public String getUsername() {
         return this.username;

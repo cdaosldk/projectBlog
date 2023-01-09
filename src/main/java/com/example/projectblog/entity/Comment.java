@@ -3,7 +3,6 @@ package com.example.projectblog.entity;
 import com.example.projectblog.dto.CommentRequestDto;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import javax.persistence.*;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,7 +32,6 @@ public class Comment extends Timestamped {
     @Column
     private String comment;
 
-    @Builder
     public Comment(CommentRequestDto commentRequestDto, Post post, User user) {
         this.username = user.getUsername();
         this.comment = commentRequestDto.getComment();

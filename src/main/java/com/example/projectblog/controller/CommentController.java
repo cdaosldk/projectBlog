@@ -18,21 +18,21 @@ public class CommentController {
     private final CommentService commentService;
 
     @PostMapping("/api/posts/{post_id}/comments")
-    public CommentResponseDto createComment(@PathVariable Long post_id, @RequestBody CommentRequestDto commentRequestDto, HttpServletRequest request) {
-        return commentService.createComment(post_id, commentRequestDto, request);
+    public CommentResponseDto createComment(@PathVariable Long post_id, @RequestBody CommentRequestDto commentRequestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return commentService.createComment(post_id, commentRequestDto, userDetails.getUser());
     }
 
-    @PutMapping("/api/posts/{id}/comments/{commentId}")
-    public void updateComment(@PathVariable Long id, @PathVariable Long commentId, HttpServletRequest request, @RequestBody CommentRequestDto commentRequestDto) {
-        commentService.update(id, commentId, request, commentRequestDto);
+    @PutMapping("/api/posts/{id}/comments/commentId}")
+    public CommentResponseDto updateComment(@PathVariable Long id, @PathVariable Long commentId, @RequestBody CommentRequestDto commentRequestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return commentService.update(commentId, commentRequestDto, userDetails.getUser());
     }
 
     @DeleteMapping("/api/posts/{id}/comments/{commentId}")
-    public String deleteComment(@PathVariable Long id, @PathVariable Long commentId,HttpServletRequest request) {
-        return commentService.delete(id, commentId, request);
+    public ResponseEntity<MessageResponseDto> deleteComment(@PathVariable Long id, @PathVariable Long commentId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return ResponseEntity.ok().body(commentService.delete(commentId, userDetails.getUser()));
     }
 
-    @PatchMapping("/api/comments/{commentId}/like")
+    @PatchMapping("/api/comments/{commentId}")
     public ResponseEntity<MessageResponseDto> commentLike(@PathVariable Long commentId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         return ResponseEntity.ok().body(commentService.commentLike(commentId, userDetails.getUser()));
     }

@@ -31,110 +31,56 @@ public class CommentService {
     private final JwtUtil jwtUtil;
 
     @Transactional
-    public CommentResponseDto createComment(Long post_id, CommentRequestDto commentRequestDto, HttpServletRequest request) {
-        String token = jwtUtil.resolveToken(request);
-        Claims claims;
+    public CommentResponseDto createComment(Long postId, CommentRequestDto commentRequestDto, User user) {
+        Post post = postRepository.findById(postId).orElseThrow(
+                ()-> new IllegalArgumentException("존재하지 않는 게시물입니다.")
+        );
 
-        // 올바른 토큰인지 확인
-        if (token != null) {
-            if (jwtUtil.validateToken(token)) {
-                claims = jwtUtil.getUserInfoFromToken(token);
-            } else {
-                throw new IllegalArgumentException("토큰이 유효하지 않습니다. StatusCode 400");
-            }
+        Comment comment = commentRepository.save(new Comment(commentRequestDto, post, user));
 
-            // 토큰에서 가져온 사용자 정보를 사용하여 DB 조회
-            User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
-                    () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
-            );
+        int likeCount = 0;
 
-            Post post = postRepository.findById(post_id).orElseThrow(
-                    () -> new IllegalArgumentException("존재하지 않는 글입니다.")
-            );
-
-
-            Comment comment = commentRepository.save(new Comment(commentRequestDto, post, user));
-
-            int likeCount = 0;
-
-            post.add(comment);
-
-            return new CommentResponseDto(comment, likeCount);
-        } else {
-            return null;
-        }
+        return new CommentResponseDto(comment, likeCount);
     }
 
     @Transactional
-    public void update(Long id, Long commentId, HttpServletRequest request, CommentRequestDto commentRequestDto) {
-        String token = jwtUtil.resolveToken(request);
-        Claims claims;
+    public CommentResponseDto update(Long commentId, CommentRequestDto commentRequestDto, User user) {
 
-        if(token != null) {
-            if (jwtUtil.validateToken(token)) {
-                claims = jwtUtil.getUserInfoFromToken(token);
-            } else {
-                throw new IllegalArgumentException("토큰이 유효하지 않습니다. StatusCode 400");
-            }
+        Comment comment;
 
-            User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
-                    () -> new IllegalArgumentException("존재하지 않는 사용자입니다.")
-            );
-
-            Comment comment = commentRepository.findById(commentId).orElseThrow(
+        if (user.getRole().equals(UserRoleEnum.ADMIN)) {
+            // 관리자일 경우
+            comment = commentRepository.findById(commentId).orElseThrow(
                     () -> new IllegalArgumentException("존재하지 않는 댓글입니다.")
             );
-
-            // 사용자 권한 가져오기
-            UserRoleEnum userRoleEnum = user.getRole();
-            System.out.println("role = " + userRoleEnum);
-
-            if (userRoleEnum == UserRoleEnum.ADMIN) {
-                // 관리자일 경우
-                comment.update(commentRequestDto);
-
-            } else if (userRoleEnum == UserRoleEnum.USER && user.getUsername().equals(comment.getUsername())) { // 사용자 권한이 USER일 경우
-                comment.update(commentRequestDto);
-            } else { // 본인의 글이 아닐 경우
-                throw new IllegalArgumentException("본인의 댓글이 아닙니다.");
-            }
+        } else { // 본인의 글이 아닐 경우
+            comment = commentRepository.findByIdAndUserId(commentId, user.getId()).orElseThrow(
+                    () -> new IllegalArgumentException("본인의 댓글이 아닙니다.")
+            );
         }
+
+        comment.update(commentRequestDto);
+
+        return new CommentResponseDto(comment, commentLikeRepository.countAllByCommentId(comment.getId()));
     }
 
     @Transactional
-    public String delete(Long id, Long commentId, HttpServletRequest request) {
-        String token = jwtUtil.resolveToken(request);
-        Claims claims;
+    public MessageResponseDto delete(Long commentId, User user) {
 
-        if (token != null) {
-            if (jwtUtil.validateToken(token)) {
-                claims = jwtUtil.getUserInfoFromToken(token);
-                User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
-                        () -> new IllegalArgumentException("존재하지 않는 사용자입니다.")
-                );
+        Comment comment;
 
-                Comment comment = commentRepository.findById(commentId).orElseThrow(
-                        () -> new IllegalArgumentException("존재하지 않는 댓글입니다.")
-                );
-
-                // 사용자 권한 가져오기
-                UserRoleEnum userRoleEnum = user.getRole();
-                System.out.println("role = " + userRoleEnum);
-
-                if (userRoleEnum == UserRoleEnum.ADMIN) {
-                    // 관리자일 경우
-                    commentRepository.deleteById(commentId);
-
-                } else if (userRoleEnum == UserRoleEnum.USER && user.getUsername().equals(comment.getUsername())) { // 사용자 권한이 USER일 경우
-                    commentRepository.deleteById(commentId);
-                } else { // 본인의 글이 아닐 경우
-                    throw new IllegalArgumentException("본인의 댓글이 아닙니다.");
-                }
-            }
-            return "삭제되었습니다.";
-        } else {
-            throw new IllegalArgumentException("토큰이 유효하지 않습니다. StatusCode 400");
+        if (user.getRole().equals(UserRoleEnum.ADMIN)) {
+            // 관리자일 경우
+            comment = commentRepository.findById(commentId).orElseThrow(
+                    () -> new IllegalArgumentException("존재하지 않는 댓글입니다.")
+            );
+        } else { // 본인의 글이 아닐 경우
+            comment = commentRepository.findByIdAndUserId(commentId, user.getId()).orElseThrow(
+                    () -> new IllegalArgumentException("본인의 댓글이 아닙니다.")
+            );
         }
+        commentRepository.deleteById(commentId);
+        return new MessageResponseDto("삭제 완료", HttpStatus.OK.value());
     }
 
     @Transactional(readOnly = true)

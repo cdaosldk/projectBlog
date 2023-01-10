@@ -1,6 +1,6 @@
 package com.example.projectblog.jwt;
 
-import com.example.projectblog.dto.SecurityExceptionDto;
+import com.example.projectblog.dto.MessageResponseDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +56,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         response.setContentType("application/json");
         try {
             // ObjectMapper를 통해 변환한다
-            String json = new ObjectMapper().writeValueAsString(new SecurityExceptionDto(statusCode, msg));
+            String json = new ObjectMapper().writeValueAsString(new MessageResponseDto(msg, statusCode));
             response.getWriter().write(json);
         } catch (Exception e) {
             log.error(e.getMessage());

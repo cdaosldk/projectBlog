@@ -6,7 +6,6 @@ import com.example.projectblog.dto.MessageResponseDto;
 import com.example.projectblog.exception.RestApiException;
 import com.example.projectblog.security.UserDetailsImpl;
 import com.example.projectblog.service.CommentService;
-import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +28,7 @@ public class CommentController {
                     .httpStatus(HttpStatus.BAD_REQUEST)
                     .build();
             return ResponseEntity.ok().body(restApiException);
-        }
+        } // 일일히 모든 메서드에 예외처리
     }
 
     @PutMapping("/api/posts/{id}/comments/commentId}")
@@ -46,4 +45,13 @@ public class CommentController {
     public ResponseEntity<MessageResponseDto> commentLike(@PathVariable Long commentId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         return ResponseEntity.ok().body(commentService.commentLike(commentId, userDetails.getUser()));
     }
+
+    @ExceptionHandler({ IllegalArgumentException.class })
+    public ResponseEntity handleException(IllegalArgumentException e) {
+        RestApiException restApiException = RestApiException.builder()
+                .errorMessage(e.getMessage())
+                .httpStatus(HttpStatus.BAD_REQUEST)
+                .build();
+        return ResponseEntity.ok().body(restApiException);
+    } // AOP : 이 클래스의 모든 메서드에 예외처리
 }

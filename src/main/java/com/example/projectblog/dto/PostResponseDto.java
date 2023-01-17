@@ -4,6 +4,8 @@ import com.example.projectblog.entity.Post;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter
 @NoArgsConstructor
 public class PostResponseDto {
@@ -12,9 +14,18 @@ public class PostResponseDto {
     private String title;
     private String contents;
 
-    public PostResponseDto(Post post) {
+    private int likePost;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime modifiedAt;
+
+    public PostResponseDto(Post post, int likePost) {
         this.id = post.getId();
         this.title = post.getTitle();
         this.contents = post.getContents();
+        this.likePost = likePost;
+        this.createdAt = post.getCreatedAt();
+        this.modifiedAt = post.getModifiedAt();
     }
 }

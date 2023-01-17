@@ -7,6 +7,7 @@ import com.example.projectblog.entity.Post;
 import com.example.projectblog.entity.User;
 import com.example.projectblog.entity.UserRoleEnum;
 import com.example.projectblog.jwt.JwtUtil;
+import com.example.projectblog.repository.PostLIkeRepository;
 import com.example.projectblog.repository.PostRepository;
 import com.example.projectblog.repository.UserRepository;
 import io.jsonwebtoken.Claims;
@@ -25,36 +26,20 @@ public class PostService {
 
     private final PostRepository postRepository;
 
+    private final PostLIkeRepository postLIkeRepository;
+
     private final UserRepository userRepository;
 
     private final JwtUtil jwtUtil;
 
     @Transactional
-    public PostResponseDto createPost(PostRequestDto postRequestDto, HttpServletRequest request) {
-        String token = jwtUtil.resolveToken(request);
-        Claims claims;
+    public PostResponseDto createPost(PostRequestDto postRequestDto, User user) {
 
-        // 올바른 토큰인지 확인
-        if (token != null) {
-            if (jwtUtil.validateToken(token)) {
-                claims = jwtUtil.getUserInfoFromToken(token);
-            } else {
-                throw new IllegalArgumentException("토큰이 유효하지 않습니다. StatusCode 400");
-            }
+        int likePost = 0;
 
-            // 토큰에서 가져온 사용자 정보를 사용하여 DB 조회
-            User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
-                    () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
-            );
+        Post post = postRepository.save(new Post(postRequestDto, user));
 
-//            List<Comment> commentList = new ArrayList<>();
-
-            Post post = postRepository.saveAndFlush(new Post(postRequestDto, user));
-
-            return new PostResponseDto(postRepository.save(post));
-        } else {
-            return null;
-        }
+        return new PostResponseDto(post, likePost);
     }
 
     @Transactional(readOnly = true)
@@ -68,41 +53,25 @@ public class PostService {
     }
 
     @Transactional
-    public void update(Long id, HttpServletRequest request, PostRequestDto postRequestDto) {
-        String token = jwtUtil.resolveToken(request);
-        Claims claims;
+    public PostResponseDto update(Long id, PostRequestDto postRequestDto, User user) {
 
-        if(token != null) {
-            if (jwtUtil.validateToken(token)) {
-                claims = jwtUtil.getUserInfoFromToken(token);
-            } else {
-                throw new IllegalArgumentException("토큰이 유효하지 않습니다. StatusCode 400");
-            }
+        Post post;
 
-            User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
-                    () -> new IllegalArgumentException("존재하지 않는 사용자입니다.")
+        if(user.getRole().equals(UserRoleEnum.ADMIN)) {
+            post = postRepository.findById(id).orElseThrow(
+                    () -> new IllegalArgumentException("존재하지 않는 게시물입니다")
             );
-
-            Post post = postRepository.findById(id).orElseThrow(
-                    () -> new IllegalArgumentException("존재하지 않는 글입니다.")
+        } else {
+            post = postRepository.findByIdAndUserId(id, user.getId()).orElseThrow(
+                    () -> new IllegalArgumentException("본인의 게시물이 아닙니다")
             );
-
-            // 사용자 권한 가져오기
-            UserRoleEnum userRoleEnum = user.getRole();
-            System.out.println("role = " + userRoleEnum);
-
-            if (userRoleEnum == UserRoleEnum.ADMIN) {
-                // 관리자일 경우
-                post.update(postRequestDto);
-
-            } else if (userRoleEnum == UserRoleEnum.USER && user.getUsername().equals(post.getUsername())) { // 사용자 권한이 USER일 경우
-                post.update(postRequestDto);
-            } else { // 본인의 글이 아닐 경우
-                throw new IllegalArgumentException("본인의 글이 아닙니다.");
-            }
         }
-            // 업데이트 결과를 PostResponseDto 타입의 객체에 담아 보내기 위해선?
-        }
+
+        post.update(postRequestDto);
+
+        return new PostResponseDto(post, postLIkeRepository.countAllByPostId(id));
+
+    }
 
     @Transactional
     public String delete(Long id, HttpServletRequest request) {

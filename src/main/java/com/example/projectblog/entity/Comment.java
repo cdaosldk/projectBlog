@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @Entity(name = "comment")
@@ -19,7 +18,6 @@ public class Comment extends Timestamped {
     @JsonBackReference // 순환참조 문제
     @ManyToOne(fetch = FetchType.LAZY) // 영속성 관리 문제
     @JoinColumn(name = "post_id", nullable = false) // 외래 키를 매핑할 때 사용, 외래 참조 키
-    @Setter
     private Post post;
 
     @ManyToOne

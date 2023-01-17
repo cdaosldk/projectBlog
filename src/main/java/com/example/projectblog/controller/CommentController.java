@@ -31,27 +31,19 @@ public class CommentController {
         } // 일일히 모든 메서드에 예외처리
     }
 
-    @PutMapping("/api/posts/{id}/comments/commentId}")
-    public ResponseEntity<CommentResponseDto> updateComment(@PathVariable Long id, @PathVariable Long commentId, @RequestBody CommentRequestDto commentRequestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+    @PutMapping("/api/{postId}/comments/commentId}")
+    public ResponseEntity<CommentResponseDto> updateComment(@PathVariable Long postId, @PathVariable Long commentId, @RequestBody CommentRequestDto commentRequestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         return ResponseEntity.ok().body(commentService.update(commentId, commentRequestDto, userDetails.getUser()));
     }
 
-    @DeleteMapping("/api/posts/{id}/comments/{commentId}")
-    public ResponseEntity<MessageResponseDto> deleteComment(@PathVariable Long id, @PathVariable Long commentId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+    @DeleteMapping("/api/{postId}/comments/{commentId}")
+    public ResponseEntity<MessageResponseDto> deleteComment(@PathVariable Long postId, @PathVariable Long commentId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         return ResponseEntity.ok().body(commentService.delete(commentId, userDetails.getUser()));
     }
 
-    @PatchMapping("/api/comments/{commentId}")
+    @PostMapping("/api/comments/{commentId}")
     public ResponseEntity<MessageResponseDto> commentLike(@PathVariable Long commentId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         return ResponseEntity.ok().body(commentService.commentLike(commentId, userDetails.getUser()));
     }
 
-    @ExceptionHandler({ IllegalArgumentException.class })
-    public ResponseEntity handleException(IllegalArgumentException e) {
-        RestApiException restApiException = RestApiException.builder()
-                .errorMessage(e.getMessage())
-                .httpStatus(HttpStatus.BAD_REQUEST)
-                .build();
-        return ResponseEntity.ok().body(restApiException);
-    } // AOP : 이 클래스의 모든 메서드에 예외처리
 }

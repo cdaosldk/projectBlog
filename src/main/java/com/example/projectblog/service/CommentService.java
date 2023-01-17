@@ -24,11 +24,7 @@ public class CommentService {
 
     private final CommentLikeRepository commentLikeRepository;
 
-    private final UserRepository userRepository;
-
     private final PostRepository postRepository;
-
-    private final JwtUtil jwtUtil;
 
     @Transactional
     public CommentResponseDto createComment(Long postId, CommentRequestDto commentRequestDto, User user) {

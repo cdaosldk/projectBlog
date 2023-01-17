@@ -1,7 +1,6 @@
 package com.example.projectblog.dto;
 
 import com.example.projectblog.entity.Comment;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -23,7 +22,6 @@ public class CommentResponseDto {
 
     private LocalDateTime modifiedAt;
 
-    @Builder
     public CommentResponseDto(Comment comment, int likeComment) {
         this.id = comment.getId();
         this.username = comment.getUsername();

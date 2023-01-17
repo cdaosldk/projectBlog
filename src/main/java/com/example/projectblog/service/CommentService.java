@@ -63,15 +63,14 @@ public class CommentService {
     @Transactional
     public MessageResponseDto delete(Long commentId, User user) {
 
-        Comment comment;
-
+        // 객체 굳이 안만들어도 됨 ~ 사용하는 경우에만
         if (user.getRole().equals(UserRoleEnum.ADMIN)) {
             // 관리자일 경우
-            comment = commentRepository.findById(commentId).orElseThrow(
+            commentRepository.findById(commentId).orElseThrow(
                     () -> new IllegalArgumentException("존재하지 않는 댓글입니다.")
             );
         } else { // 본인의 글이 아닐 경우
-            comment = commentRepository.findByIdAndUserId(commentId, user.getId()).orElseThrow(
+            commentRepository.findByIdAndUserId(commentId, user.getId()).orElseThrow(
                     () -> new IllegalArgumentException("본인의 댓글이 아닙니다.")
             );
         }

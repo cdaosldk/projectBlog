@@ -1,22 +1,16 @@
 package com.example.projectblog.service;
 
+import com.example.projectblog.dto.MessageResponseDto;
 import com.example.projectblog.dto.PostRequestDto;
 import com.example.projectblog.dto.PostResponseDto;
-import com.example.projectblog.entity.Comment;
-import com.example.projectblog.entity.Post;
-import com.example.projectblog.entity.User;
-import com.example.projectblog.entity.UserRoleEnum;
-import com.example.projectblog.jwt.JwtUtil;
-import com.example.projectblog.repository.PostLIkeRepository;
+import com.example.projectblog.entity.*;
+import com.example.projectblog.repository.PostLikeRepository;
 import com.example.projectblog.repository.PostRepository;
-import com.example.projectblog.repository.UserRepository;
-import io.jsonwebtoken.Claims;
-import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,11 +20,7 @@ public class PostService {
 
     private final PostRepository postRepository;
 
-    private final PostLIkeRepository postLIkeRepository;
-
-    private final UserRepository userRepository;
-
-    private final JwtUtil jwtUtil;
+    private final PostLikeRepository postLikeRepository;
 
     @Transactional
     public PostResponseDto createPost(PostRequestDto postRequestDto, User user) {
@@ -69,43 +59,46 @@ public class PostService {
 
         post.update(postRequestDto);
 
-        return new PostResponseDto(post, postLIkeRepository.countAllByPostId(id));
+        return new PostResponseDto(post, postLikeRepository.countAllByPostId(id));
 
     }
 
     @Transactional
-    public String delete(Long id, HttpServletRequest request) {
-        String token = jwtUtil.resolveToken(request);
-        Claims claims;
+    public MessageResponseDto delete(Long id, User user) {
 
-        if (token != null) {
-            if (jwtUtil.validateToken(token)) {
-                claims = jwtUtil.getUserInfoFromToken(token);
-                User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
-                        () -> new IllegalArgumentException("존재하지 않는 사용자입니다.")
-                );
+        // 객체 굳이 안만들어도 됨 ~ 사용하는 경우에만
+        if (user.getRole().equals(UserRoleEnum.ADMIN)) {
+            // 관리자일 경우
+            postRepository.findById(id).orElseThrow(
+                    () -> new IllegalArgumentException("존재하지 않는 게시물입니다.")
+            );
+        } else { // 본인의 글이 아닐 경우
+            postRepository.findByIdAndUserId(id, user.getId()).orElseThrow(
+                    () -> new IllegalArgumentException("본인의 게시물이 아닙니다.")
+            );
+        }
+        postRepository.deleteById(id);
+        return new MessageResponseDto("삭제 완료", HttpStatus.OK.value());
+    }
 
-                Post post = postRepository.findById(id).orElseThrow(
-                        () -> new IllegalArgumentException("존재하지 않는 글입니다.")
-                );
+    @Transactional(readOnly = true)
+    public boolean checkPostLike(Long id, User user) {
+        return postLikeRepository.existsByPostIdAndUserId(id, user.getId());
+    }
 
-                // 사용자 권한 가져오기
-                UserRoleEnum userRoleEnum = user.getRole();
-                System.out.println("role = " + userRoleEnum);
+    @Transactional
+    public MessageResponseDto postLike(Long id, User user) {
 
-                if (userRoleEnum == UserRoleEnum.ADMIN) {
-                    // 관리자일 경우
-                    postRepository.deleteById(id);
+        Post post = postRepository.findById(id).orElseThrow(
+                () -> new IllegalArgumentException("존재하지 않는 게시물입니다.")
+        );
 
-                } else if (userRoleEnum == UserRoleEnum.USER && user.getUsername().equals(post.getUsername())) { // 사용자 권한이 USER일 경우
-                    postRepository.deleteById(id);
-                } else { // 본인의 글이 아닐 경우
-                    throw new IllegalArgumentException("본인의 글이 아닙니다.");
-                }
-            }
-            return "삭제되었습니다.";
+        if(!checkPostLike(id, user)) {
+            postLikeRepository.save(new PostLike(post, user));
+            return new MessageResponseDto("좋아요 완료", HttpStatus.OK.value());
         } else {
-            throw new IllegalArgumentException("토큰이 유효하지 않습니다. StatusCode 400");
+            postLikeRepository.deleteByPostIdAndUserId(id, user.getId());
+            return  new MessageResponseDto("좋아요 취소", HttpStatus.OK.value());
         }
     }
 }

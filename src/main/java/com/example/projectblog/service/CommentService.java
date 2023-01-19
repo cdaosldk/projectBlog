@@ -4,11 +4,9 @@ import com.example.projectblog.dto.CommentRequestDto;
 import com.example.projectblog.dto.CommentResponseDto;
 import com.example.projectblog.dto.MessageResponseDto;
 import com.example.projectblog.entity.*;
-import com.example.projectblog.jwt.JwtUtil;
 import com.example.projectblog.repository.CommentLikeRepository;
 import com.example.projectblog.repository.CommentRepository;
 import com.example.projectblog.repository.PostRepository;
-import com.example.projectblog.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -93,7 +91,7 @@ public class CommentService {
 
         // 해당 회원의 좋아요 여부를 확인하고 비어있으면 좋아요, 아니면 좋아요 취소
         if(!checkCommentLike(commentId, user)) {
-            commentLikeRepository.saveAndFlush(new CommentLike(comment, user));
+            commentLikeRepository.save(new CommentLike(comment, user));
             return new MessageResponseDto("좋아요 완료", HttpStatus.OK.value());
         } else {
             commentLikeRepository.deleteByCommentIdAndUserId(commentId, user.getId());

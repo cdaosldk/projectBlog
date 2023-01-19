@@ -31,7 +31,7 @@ public class CommentController {
         } // 일일히 모든 메서드에 예외처리
     }
 
-    @PutMapping("/api/{postId}/comments/commentId}")
+    @PutMapping("/api/{postId}/comments/{commentId}")
     public ResponseEntity<CommentResponseDto> updateComment(@PathVariable Long postId, @PathVariable Long commentId, @RequestBody CommentRequestDto commentRequestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         return ResponseEntity.ok().body(commentService.update(commentId, commentRequestDto, userDetails.getUser()));
     }

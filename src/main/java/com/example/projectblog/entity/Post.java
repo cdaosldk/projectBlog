@@ -1,7 +1,6 @@
 package com.example.projectblog.entity;
 
 import com.example.projectblog.dto.PostRequestDto;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

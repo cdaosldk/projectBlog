@@ -7,8 +7,6 @@ import com.example.projectblog.entity.*;
 import com.example.projectblog.repository.CommentLikeRepository;
 import com.example.projectblog.repository.CommentRepository;
 import com.example.projectblog.repository.PostRepository;
-import io.jsonwebtoken.Claims;
-import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

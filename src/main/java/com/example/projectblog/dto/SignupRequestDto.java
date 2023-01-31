@@ -1,5 +1,10 @@
 package com.example.projectblog.dto;
 
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+
+@Builder
 public class SignupRequestDto {
     private String username;
     private String password;

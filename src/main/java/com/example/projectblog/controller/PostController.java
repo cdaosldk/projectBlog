@@ -8,6 +8,7 @@ import com.example.projectblog.exception.RestApiException;
 import com.example.projectblog.security.UserDetailsImpl;
 import com.example.projectblog.service.PostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,7 +29,7 @@ public class PostController {
     }
 
     @GetMapping("/api/posts")
-    public List<Post> getPosts() {
+    public Page<PostResponseDto> getPosts() {
         return postService.getPosts();
     }
 

@@ -1,0 +1,23 @@
+#spring:
+#  servlet:
+#    multipart:
+#      max-file-size: 1GB
+#      max-request-size: 1GB
+#  file-dir: /src/main/resources/static/files/
+#
+#cloud:
+#  aws:
+#    region:
+#      static: ap-northeast-2
+#    s3:
+#      bucket: testfortownmarketproject
+#    stack:
+#      auto: false
+#
+#logging:
+#  level:
+#    com:
+#      amazonaws:
+#        util:
+#          EC2MetadataUtils: error
+#

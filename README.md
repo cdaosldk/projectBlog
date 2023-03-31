@@ -1,7 +1,5 @@
 # projectBlog : 기본 게시판 CRUD에 다양한 기능 구현 추가 프로젝트
 
-# 개발인원 : 1인
-
 # 개발환경
 
 -Spring Boot Version : 2.7.6

@@ -18,7 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
   private final UserRepository userRepository;
+
   private final JwtUtil jwtUtil;
+
+  private final RefreshTokenService refreshTokenService;
 
   private static final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
 
@@ -77,7 +80,7 @@ public class UserService {
     // token 발급
     String accessToken = jwtUtil.createAccessToken(user.getUsername());
     response.addHeader(JwtUtil.AUTHORIZATION_HEADER, accessToken);
-    String refreshToken = jwtUtil.createRefreshToken(user.getUsername());
-    response.addHeader(JwtUtil.REFRESH_HEADER, refreshToken);
+    String refreshToken = refreshTokenService.createRefreshToken(user.getUsername());
+    response.addHeader(RefreshTokenService.REFRESH_HEADER, refreshToken);
   }
 }

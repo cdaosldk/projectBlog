@@ -2,9 +2,15 @@
 
 # 개발환경
 
--Spring Boot Version : 2.7.6
+- Spring Boot Version : 2.7.6
 
 - Java 17
+
+- Gradle
+
+- Redis 2.7.6
+
+- AWS S3
 
 # 개발기간
 
@@ -17,6 +23,8 @@
 - AWS S3
 - Spring Security
 - CI/CD
+- Redis를 활용한 RefreshToken
+- 도커화
 
 # ERD
 

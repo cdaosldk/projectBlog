@@ -17,4 +17,8 @@ public class RefreshToken {
     this.refreshToken = refreshToken;
     this.userId = userId;
   }
+
+  public boolean checkRefreshToken(String token) {
+    return refreshToken.equals(token);
+  }
 }

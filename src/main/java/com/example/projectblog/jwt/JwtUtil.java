@@ -1,6 +1,7 @@
 package com.example.projectblog.jwt;
 
 import com.example.projectblog.security.UserDetailsServiceImpl;
+import com.example.projectblog.service.RefreshTokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -14,6 +15,7 @@ import java.util.Base64;
 import java.util.Date;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,12 +31,12 @@ import org.springframework.util.StringUtils;
 public class JwtUtil {
 
   public static final String AUTHORIZATION_HEADER = "Authorization";
-  public static final String REFRESH_HEADER = "Refresh";
-  private static final String BEARER_PREFIX = "Bearer ";
-  private static final long ACCESS_TOKEN_TIME = (long) 60 * 60;
-  // 일반적으로 사용하는 2주의 리프레시 유효기간
-  private static final long REFRESH_TOKEN_TIME = (long) 60 * 60 * 336;
 
+  private static final String BEARER_PREFIX = "Bearer ";
+
+  private static final long ACCESS_TOKEN_TIME = (long) 60 * 60;
+
+  private final RefreshTokenService refreshTokenService;
 
   private final UserDetailsServiceImpl userDetailsService;
 
@@ -58,15 +60,6 @@ public class JwtUtil {
     return null;
   }
 
-  // refresh 토큰 가져오기
-  public String resolveRefreshToken(HttpServletRequest request) {
-    String bearerToken = request.getHeader(REFRESH_HEADER);
-    if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-      return bearerToken.substring(7);
-    }
-    return null;
-  }
-
   public String createAccessToken(String username) {
     Date date = new Date();
 
@@ -79,27 +72,17 @@ public class JwtUtil {
             .compact();
   }
 
-  public String createRefreshToken(String username) {
-    Date date = new Date();
-
-    return BEARER_PREFIX +
-        Jwts.builder()
-            .setSubject(username)
-            .setExpiration(new Date(date.getTime() + REFRESH_TOKEN_TIME))
-            .setIssuedAt(date)
-            .signWith(key, signatureAlgorithm)
-            .compact();
-  }
-
   // 토큰 검증
-  public boolean validateToken(String token) {
+  public boolean validateToken(String token, HttpServletRequest request,
+      HttpServletResponse response) {
     try {
       Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
       return true;
     } catch (SecurityException | MalformedJwtException e) {
       log.info("Invalid JWT signature, 유효하지 않는 JWT 서명 입니다.");
     } catch (ExpiredJwtException e) {
-      log.info("Expired JWT token, 만료된 JWT token 입니다.");
+      log.info("만료된 AccessToken 입니다");
+      refreshTokenService.checkRefreshToken(request, response);
     } catch (UnsupportedJwtException e) {
       log.info("Unsupported JWT token, 지원되지 않는 JWT 토큰 입니다.");
     } catch (IllegalArgumentException e) {

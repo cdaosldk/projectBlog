@@ -2,23 +2,21 @@ package com.example.projectblog.entity;
 
 import javax.persistence.Id;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.redis.core.RedisHash;
 
-@RedisHash(value = "refreshToken", timeToLive = 60 * 60 * 336)
 @Getter
+@NoArgsConstructor
+@RedisHash(value = "refreshToken", timeToLive = 60 * 60 * 336L)
 public class RefreshToken {
 
   @Id
-  private String refreshToken;
+  private String id;
 
-  private Long userId;
+  private String username;
 
-  public RefreshToken(String refreshToken, Long userId) {
-    this.refreshToken = refreshToken;
-    this.userId = userId;
-  }
-
-  public boolean checkRefreshToken(String token) {
-    return refreshToken.equals(token);
+  public RefreshToken(String id, String username) {
+    this.id = id;
+    this.username = username;
   }
 }

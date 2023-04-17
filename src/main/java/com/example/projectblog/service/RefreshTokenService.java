@@ -1,56 +1,97 @@
 package com.example.projectblog.service;
 
 import com.example.projectblog.entity.RefreshToken;
-import com.example.projectblog.entity.User;
 import com.example.projectblog.jwt.JwtUtil;
 import com.example.projectblog.repository.RefreshTokenRepository;
-import com.example.projectblog.repository.UserRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
-import java.util.Optional;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
+import javax.annotation.PostConstruct;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
 
-  private final UserRepository userRepository;
-
   private final RefreshTokenRepository refreshTokenRepository;
-
-  private final JwtUtil jwtUtil;
-
-  public static final String REFRESH_HEADER = "Refresh";
 
   private static final String BEARER_PREFIX = "Bearer ";
 
-  public String createRefreshToken(String username) {
-    RefreshToken refreshToken = new RefreshToken(UUID.randomUUID().toString(), findByUsername(username).getId());
-    saveRefreshToken(refreshToken);
-    return refreshToken.toString();
+  private static final long ACCESS_TOKEN_TIME = (long) 60 * 60;
+
+  @Value("${jwt.secret.key}")
+  private String secretKey;
+
+  private Key key;
+
+  private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+
+  @PostConstruct
+  private void init() {
+    byte[] bytes = Base64.getDecoder().decode(secretKey);
+    key = Keys.hmacShaKeyFor(bytes);
   }
 
-  public void saveRefreshToken(RefreshToken refreshToken) {
+  public String createRefreshToken(String username) {
+    RefreshToken refreshToken = new RefreshToken(UUID.randomUUID().toString(), username);
+    saveRefreshToken(refreshToken);
+    return refreshToken.getId() + ":" + refreshToken.getUsername();
+  }
+
+  public Cookie createRefreshCookie(String stringRefreshToken) {
+    Cookie cookie = new Cookie("refreshToken", stringRefreshToken);
+    cookie.setMaxAge(60 * 60 * 336);
+    cookie.setHttpOnly(true);
+    cookie.setSecure(true);
+    return cookie;
+  }
+
+  private void saveRefreshToken(RefreshToken refreshToken) {
     refreshTokenRepository.save(refreshToken);
   }
 
-  public RefreshToken getRefreshToken(HttpServletRequest request) {
-    refreshTokenRepository.findByIdAndUserId(request.getHeader(REFRESH_HEADER)).orElseThrow(
-        () -> new IllegalArgumentException("존재하지 않는 리프레시 토큰입니다.")
-    );
+  public void checkRefreshToken(String StringRefreshToken, String username,
+      HttpServletResponse response) {
+    if (refreshTokenRepository.existsById(StringRefreshToken)) {
+      regenerateRefreshToken(username, response);
+
+    } else {
+      RefreshToken refreshToken = refreshTokenRepository.findById(StringRefreshToken).orElseThrow(
+          () -> new IllegalArgumentException("존재하지 않는 토큰입니다.")
+      );
+      deleteRefreshToken(refreshToken);
+    }
   }
 
-    private User findByUsername (String username){
-      return userRepository.findByUsername(username)
-          .orElseThrow(() -> new IllegalArgumentException("해당 유저는 존재하지 않습니다"));
-    }
+  public void deleteRefreshToken(RefreshToken refreshToken) {
+    refreshTokenRepository.delete(refreshToken);
+  }
+
+  private void regenerateRefreshToken(String username, HttpServletResponse response) {
+    Date date = new Date();
+
+    String newAccessToken = BEARER_PREFIX +
+        Jwts.builder()
+            .setSubject(username)
+            .setExpiration(new Date(date.getTime() + ACCESS_TOKEN_TIME))
+            .setIssuedAt(date)
+            .signWith(key, signatureAlgorithm)
+            .compact();
+
+    response.addHeader(JwtUtil.AUTHORIZATION_HEADER, newAccessToken);
+  }
+
+  public RefreshToken findById(String refreshToken) {
+    return refreshTokenRepository.findById(refreshToken).orElseThrow(
+        () -> new IllegalArgumentException("존재하지 않는 토큰입니다.")
+    );
   }
 }

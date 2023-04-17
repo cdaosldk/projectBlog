@@ -36,17 +36,19 @@ public class JwtUtil {
 
   private static final long ACCESS_TOKEN_TIME = (long) 60 * 60;
 
-  private final RefreshTokenService refreshTokenService;
-
   private final UserDetailsServiceImpl userDetailsService;
+
+  private final RefreshTokenService refreshTokenService;
 
   @Value("${jwt.secret.key}")
   private String secretKey;
+
   private Key key;
+
   private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
 
   @PostConstruct
-  public void init() {
+  private void init() {
     byte[] bytes = Base64.getDecoder().decode(secretKey);
     key = Keys.hmacShaKeyFor(bytes);
   }
@@ -56,8 +58,9 @@ public class JwtUtil {
     String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
       return bearerToken.substring(7);
+    } else {
+      return "엑세스 토큰을 추출하지 못했습니다";
     }
-    return null;
   }
 
   public String createAccessToken(String username) {
@@ -73,20 +76,28 @@ public class JwtUtil {
   }
 
   // 토큰 검증
-  public boolean validateToken(String token, HttpServletRequest request,
-      HttpServletResponse response) {
+  public boolean validateAccessToken(String token) {
     try {
       Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
       return true;
     } catch (SecurityException | MalformedJwtException e) {
       log.info("Invalid JWT signature, 유효하지 않는 JWT 서명 입니다.");
-    } catch (ExpiredJwtException e) {
-      log.info("만료된 AccessToken 입니다");
-      refreshTokenService.checkRefreshToken(request, response);
     } catch (UnsupportedJwtException e) {
       log.info("Unsupported JWT token, 지원되지 않는 JWT 토큰 입니다.");
     } catch (IllegalArgumentException e) {
       log.info("JWT claims is empty, 잘못된 JWT 토큰 입니다.");
+    }
+    return false;
+  }
+
+  public boolean checkExpirationToken(String token, String refreshToken, String username,
+      HttpServletResponse response) {
+    try {
+      Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+      return true;
+    } catch (ExpiredJwtException e) {
+      log.info("만료된 AccessToken 입니다");
+      refreshTokenService.checkRefreshToken(refreshToken, username, response);
     }
     return false;
   }

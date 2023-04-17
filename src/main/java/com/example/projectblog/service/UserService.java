@@ -4,10 +4,11 @@ import com.example.projectblog.dto.LoginRequestDto;
 import com.example.projectblog.dto.SignupRequestDto;
 import com.example.projectblog.entity.User;
 import com.example.projectblog.entity.UserRoleEnum;
+import com.example.projectblog.jwt.JwtAuthFilter;
 import com.example.projectblog.jwt.JwtUtil;
 import com.example.projectblog.repository.UserRepository;
-import java.util.Optional;
 import java.util.regex.Pattern;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ public class UserService {
 
   private final JwtUtil jwtUtil;
 
+  private final JwtAuthFilter jwtAuthFilter;
+
   private final RefreshTokenService refreshTokenService;
 
   private static final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
@@ -31,11 +34,7 @@ public class UserService {
     String password = signupRequestDto.getPassword();
     String email = signupRequestDto.getEmail();
 
-    // 회원 중복 확인
-    Optional<User> found = userRepository.findByUsername(username);
-    if (found.isPresent()) {
-      throw new IllegalArgumentException("중복된 사용자가 존재합니다.");
-    }
+    findByUsername(username);
 
     // 등록 시 제한사항 설정 및 확인
     String usernamePattern = "^[a-z0-9]{4,10}$";
@@ -58,29 +57,35 @@ public class UserService {
     if (signupRequestDto.getAdminToken().equals("")) {
       role = UserRoleEnum.USER;
     }
-    User user = new User(username, password, email, role);
-    userRepository.save(user);
+    userRepository.save(new User(username, password, email, role));
   }
 
-  @Transactional(readOnly = true)
+  @Transactional
   public void login(LoginRequestDto loginRequestDto, HttpServletResponse response) {
-    String username = loginRequestDto.getUsername();
-    String password = loginRequestDto.getPassword();
-
-    // 사용자 확인
-    User user = userRepository.findByUsername(username).orElseThrow(
-        () -> new IllegalArgumentException("등록된 사용자가 없습니다.")
-    );
+    User user = findByUsername(loginRequestDto.getUsername());
 
     // 비밀번호 확인
-    if (!user.getPassword().equals(password)) {
+    if (!user.getPassword().equals(loginRequestDto.getPassword())) {
       throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
     }
 
     // token 발급
-    String accessToken = jwtUtil.createAccessToken(user.getUsername());
-    response.addHeader(JwtUtil.AUTHORIZATION_HEADER, accessToken);
-    String refreshToken = refreshTokenService.createRefreshToken(user.getUsername());
-    response.addHeader(RefreshTokenService.REFRESH_HEADER, refreshToken);
+    response.addHeader(JwtUtil.AUTHORIZATION_HEADER, jwtUtil.createAccessToken(user.getUsername()));
+
+    response.addCookie(
+        refreshTokenService.createRefreshCookie(
+            refreshTokenService.createRefreshToken(user.getUsername())));
+  }
+
+  public void logout(HttpServletRequest request, HttpServletResponse response) {
+    response.setHeader(JwtUtil.AUTHORIZATION_HEADER, null);
+    refreshTokenService.deleteRefreshToken(refreshTokenService.findById(
+        jwtAuthFilter.separateRefreshToken(
+            jwtAuthFilter.resolveRefreshTokenFromCookies(request))[0]));
+  }
+
+  private User findByUsername(String username) {
+    return userRepository.findByUsername(username)
+        .orElseThrow(() -> new IllegalArgumentException("해당 유저는 존재하지 않습니다"));
   }
 }

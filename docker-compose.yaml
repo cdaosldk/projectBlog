@@ -1,0 +1,12 @@
+version: "2.17.2"
+services:
+  redis:
+    image: 'redis'
+  backend:
+    build:
+      context: .
+      args:
+        JAR_FIlE: build/libs/*.jar
+    image: backend
+    depends_on:
+      - redis

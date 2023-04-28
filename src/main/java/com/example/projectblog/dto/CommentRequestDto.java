@@ -1,9 +1,17 @@
 package com.example.projectblog.dto;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 public class CommentRequestDto {
-    String username;
-    String comment;
+
+  private String username;
+  private String comment;
+
+  public CommentRequestDto(String username, String comment) {
+    this.username = username;
+    this.comment = comment;
+  }
 }

@@ -1,14 +1,21 @@
 package com.example.projectblog.dto;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 public class PostRequestDto {
 
-    String title;
+  private String title;
 
-    String username;
+  private String username;
 
-    String contents;
+  private String contents;
 
+  public PostRequestDto(String title, String username, String contents) {
+    this.title = title;
+    this.username = username;
+    this.contents = contents;
+  }
 }

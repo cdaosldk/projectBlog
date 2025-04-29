@@ -21,7 +21,7 @@ public class CommentComment extends Timestamped {
 
   private String username;
 
-  private String commentComment;
+  private String commentCommentContent;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "comment_id")
@@ -31,4 +31,7 @@ public class CommentComment extends Timestamped {
   @JoinColumn(name = "users_id")
   private User user;
 
+    public CommentComment(String commentCommentContent) {
+        this.commentCommentContent = commentCommentContent;
+    }
 }

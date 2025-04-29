@@ -16,9 +16,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
+
 @Service
 @RequiredArgsConstructor
 public class CommentService {
+
+  @Resource
+  private CommentService thisCommentService;
 
   private final CommentRepository commentRepository;
 
@@ -94,7 +99,7 @@ public class CommentService {
     );
 
     // 해당 회원의 좋아요 여부를 확인하고 비어있으면 좋아요, 아니면 좋아요 취소
-    if (!checkCommentLike(commentId, user)) {
+    if (!thisCommentService.checkCommentLike(commentId, user)) { //@Transactional과 @Async, 또는 @Cacheable을 함께 사용하는 경우 ThreadLocal에서 다른 스레드를 생성하기 때문에 다른 결과가 조회될 수 있다.
       commentLikeRepository.save(new CommentLike(comment, user));
       return new MessageResponseDto("좋아요 완료", HttpStatus.OK.value());
     } else {

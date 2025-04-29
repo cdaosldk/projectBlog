@@ -16,9 +16,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
+
 @Service
 @RequiredArgsConstructor
 public class PostService {
+
+  @Resource
+  private PostService thisPostService;
 
   private final PostRepository postRepository;
 
@@ -100,7 +105,7 @@ public class PostService {
         () -> new IllegalArgumentException("존재하지 않는 게시물입니다.")
     );
 
-    if (!checkPostLike(id, user)) {
+    if (!thisPostService.checkPostLike(id, user)) {
       postLikeRepository.save(new PostLike(post, user));
       return new MessageResponseDto("좋아요 완료", HttpStatus.OK.value());
     } else {

@@ -32,7 +32,7 @@ public class RefreshTokenService {
 
   private Key key;
 
-  private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+  private static final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
 
   @PostConstruct
   private void init() {
@@ -58,13 +58,13 @@ public class RefreshTokenService {
     refreshTokenRepository.save(refreshToken);
   }
 
-  public void checkRefreshToken(String StringRefreshToken, String username,
+  public void checkRefreshToken(String stringRefreshToken, String username,
       HttpServletResponse response) {
-    if (refreshTokenRepository.existsById(StringRefreshToken)) {
+    if (refreshTokenRepository.existsById(stringRefreshToken)) {
       regenerateRefreshToken(username, response);
 
     } else {
-      RefreshToken refreshToken = refreshTokenRepository.findById(StringRefreshToken).orElseThrow(
+      RefreshToken refreshToken = refreshTokenRepository.findById(stringRefreshToken).orElseThrow(
           () -> new IllegalArgumentException("존재하지 않는 토큰입니다.")
       );
       deleteRefreshToken(refreshToken);

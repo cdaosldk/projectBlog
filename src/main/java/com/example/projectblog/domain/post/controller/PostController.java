@@ -65,7 +65,7 @@ public class PostController {
   }
 
   @ExceptionHandler({IllegalArgumentException.class})
-  public ResponseEntity handleException(IllegalArgumentException e) {
+  public ResponseEntity<RestApiException> handleException(IllegalArgumentException e) {
     RestApiException restApiException = RestApiException.builder()
         .errorMessage(e.getMessage())
         .httpStatus(HttpStatus.BAD_REQUEST)

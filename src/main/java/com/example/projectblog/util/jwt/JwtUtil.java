@@ -45,7 +45,7 @@ public class JwtUtil {
 
   private Key key;
 
-  private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+  private static final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
 
   @PostConstruct
   private void init() {

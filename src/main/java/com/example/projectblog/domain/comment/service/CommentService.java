@@ -11,6 +11,9 @@ import com.example.projectblog.domain.post.repository.PostRepository;
 import com.example.projectblog.domain.user.entity.User;
 import com.example.projectblog.domain.user.entity.UserRoleEnum;
 import com.example.projectblog.dto.MessageResponseDto;
+import com.example.projectblog.util.kafka.event.CommentCreatedEvent;
+import com.example.projectblog.util.kafka.event.LikeEvent;
+import com.example.projectblog.util.kafka.producer.BlogEventProducer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -26,10 +29,9 @@ public class CommentService {
   private CommentService thisCommentService;
 
   private final CommentRepository commentRepository;
-
   private final CommentLikeRepository commentLikeRepository;
-
   private final PostRepository postRepository;
+  private final BlogEventProducer blogEventProducer;
 
   @Transactional
   public CommentResponseDto createComment(Long postId, CommentRequestDto commentRequestDto,
@@ -39,10 +41,12 @@ public class CommentService {
     );
 
     Comment comment = commentRepository.save(new Comment(commentRequestDto, post, user));
+    blogEventProducer.sendCommentCreated(new CommentCreatedEvent(
+        comment.getId(), comment.getComment(), user.getUsername(),
+        post.getId(), post.getUsername()
+    ));
 
-    int likeCount = 0;
-
-    return new CommentResponseDto(comment, likeCount);
+    return new CommentResponseDto(comment, 0);
   }
 
   @Transactional
@@ -99,8 +103,10 @@ public class CommentService {
     );
 
     // 해당 회원의 좋아요 여부를 확인하고 비어있으면 좋아요, 아니면 좋아요 취소
-    if (!thisCommentService.checkCommentLike(commentId, user)) { //@Transactional과 @Async, 또는 @Cacheable을 함께 사용하는 경우 ThreadLocal에서 다른 스레드를 생성하기 때문에 다른 결과가 조회될 수 있다.
+    // @Transactional과 @Async 등을 함께 쓸 때 ThreadLocal 스레드 분기 문제로 self-injection 사용
+    if (!thisCommentService.checkCommentLike(commentId, user)) {
       commentLikeRepository.save(new CommentLike(comment, user));
+      blogEventProducer.sendCommentLiked(new LikeEvent("COMMENT", commentId, user.getUsername(), comment.getUsername()));
       return new MessageResponseDto("좋아요 완료", HttpStatus.OK.value());
     } else {
       commentLikeRepository.deleteByCommentIdAndUserId(commentId, user.getId());

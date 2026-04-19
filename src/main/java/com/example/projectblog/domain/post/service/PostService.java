@@ -9,6 +9,9 @@ import com.example.projectblog.domain.post.repository.PostRepository;
 import com.example.projectblog.domain.user.entity.User;
 import com.example.projectblog.domain.user.entity.UserRoleEnum;
 import com.example.projectblog.dto.MessageResponseDto;
+import com.example.projectblog.util.kafka.event.LikeEvent;
+import com.example.projectblog.util.kafka.event.PostCreatedEvent;
+import com.example.projectblog.util.kafka.producer.BlogEventProducer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,15 +29,14 @@ public class PostService {
   private PostService thisPostService;
 
   private final PostRepository postRepository;
-
   private final PostLikeRepository postLikeRepository;
+  private final BlogEventProducer blogEventProducer;
 
   @Transactional
   public MessageResponseDto createPost(PostRequestDto postRequestDto, User user) {
 
-    int likePost = 0;
-
     Post post = postRepository.save(new Post(postRequestDto, user));
+    blogEventProducer.sendPostCreated(new PostCreatedEvent(post.getId(), post.getTitle(), user.getUsername()));
 
     return new MessageResponseDto("게시물 작성에 성공했습니다", HttpStatus.CREATED.value());
   }
@@ -107,6 +109,7 @@ public class PostService {
 
     if (!thisPostService.checkPostLike(id, user)) {
       postLikeRepository.save(new PostLike(post, user));
+      blogEventProducer.sendPostLiked(new LikeEvent("POST", id, user.getUsername(), post.getUsername()));
       return new MessageResponseDto("좋아요 완료", HttpStatus.OK.value());
     } else {
       postLikeRepository.deleteByPostIdAndUserId(id, user.getId());

@@ -6,10 +6,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,8 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @RequiredArgsConstructor
-@EnableWebSecurity // 스프링 Security 지원 가능
-@EnableGlobalMethodSecurity(securedEnabled = true) // @Secured 어노테이션 활성화
+@EnableWebSecurity
+@EnableMethodSecurity(securedEnabled = true) // 6.x 버전 변경: @EnableGlobalMethodSecurity deprecated 대체
 public class WebSecurityConfig {
 
   private final JwtUtil jwtUtil;
@@ -28,7 +29,6 @@ public class WebSecurityConfig {
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
-
 
   @Bean // WebSecurityCustomizer는 SecurityFilterChain보다 우선 적용되어 FilterChain을 통한 검사 시 적용된 상태로 검사를 수행
   public WebSecurityCustomizer webSecurityCustomizer() {
@@ -40,26 +40,35 @@ public class WebSecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http.csrf().disable();
+    http
+        // 1. CSRF 비활성화 (JWT 사용하므로 비활성화)
+        .csrf(AbstractHttpConfigurer::disable)
 
-    // 기본 설정인 Session 방식은 사용하지 않고 JWT 방식을 사용하기 위한 설정
-    http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        // 2. 세션 정책 설정 (STATELESS)
+        .sessionManagement(sessionManagement ->
+            sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
 
-    // permitAll()을 사용하여 해당 URL을 인증하지 않고 요청에 응답
-    http.authorizeRequests()
-        .antMatchers("/api/user/**").permitAll()
-        .antMatchers("/image-upload").permitAll()
-        .anyRequest().authenticated()
-        // Jwt 토큰을 활용한 인증/인가 설정, CustomFilter 틍록, addFilterBefore(추가할 필터, 추가되는 필터의 다음 필터)
-        // UsernamePasswordAuthenticationFilter : FormLogin 형식을 사용할 때 username과 password를 사용한 인증
-        // 인증에 실패한다면, 기본 로그인 페이지를 반환
-        .and()
+        // 3. 인가(Authorization) 설정 (antMatchers -> requestMatchers로 변경)
+        .authorizeHttpRequests(authorizeHttpRequests ->
+            authorizeHttpRequests
+                .requestMatchers("/api/user/**").permitAll()
+                .requestMatchers("/image-upload").permitAll()
+                .anyRequest().authenticated()
+        )
+
+        // 4. FormLogin 설정
+        .formLogin(formLogin ->
+            formLogin.permitAll()
+        )
+
+        // 5. 예외 처리 설정
+        .exceptionHandling(exceptionHandling ->
+            exceptionHandling.accessDeniedPage("/api/user/forbidden")
+        )
+
+        // 6. JWT 커스텀 필터 등록
         .addFilterBefore(new JwtAuthFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
-
-    // 스프링 시큐리티에서 제공하는 기본 FormLogin 방식을 사용하는 로그인페이지의 요청을 인증없이 허용
-    http.formLogin().permitAll();
-
-    http.exceptionHandling().accessDeniedPage("/api/user/forbidden");
 
     return http.build();
   }

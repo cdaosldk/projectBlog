@@ -2,15 +2,17 @@
 
 # 개발환경
 
-- Spring Boot Version : 2.7.6
+- Spring Boot Version : 3.5,9
 
-- Java 17
+- Java 21
 
 - Gradle
 
 - Redis 2.7.6
 
 - AWS S3
+
+- kafka
 
 # 개발기간
 
@@ -25,6 +27,7 @@
 - CI/CD
 - Redis를 활용한 RefreshToken
 - 도커화
+- 카프카를 활용한 실시간 스트리밍
 
 # ERD
 

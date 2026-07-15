@@ -46,6 +46,9 @@ dependencies {
 
     // Kafka
     implementation 'org.springframework.kafka:spring-kafka'
+
+    // Apache POI for Excel
+    implementation 'org.apache.poi:poi-ooxml:5.2.3' // 또는 최신 버전
 }
 
 tasks.named('test') {

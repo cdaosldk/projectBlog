@@ -3,10 +3,10 @@ package project.example.projectblog.service;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
 
-import project.projectblog.domain.user.dto.SignupRequestDto;
-import project.projectblog.domain.user.entity.User;
-import project.projectblog.domain.user.repository.UserRepository;
-import project.projectblog.domain.user.service.UserService;
+import project.blog.domain.user.dto.SignupRequestDto;
+import project.blog.domain.user.entity.User;
+import project.blog.domain.user.repository.UserRepository;
+import project.blog.domain.user.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -1,61 +1,148 @@
 package project.document.domain.excel.service;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.stereotype.Service;
+import project.document.domain.excel.annotation.ExcelColumn;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class ExcelService {
 
-    public void writeExcelSheetToWorkbook(Workbook workbook, String sheetName, Map<String, String> cellValues, int minWidth, List<Map<String, Object>> dataList) {
-		Sheet sheet = workbook.createSheet(sheetName);
-		createHeaderRow(sheet, cellValues);
+    private static final int MAX_ROWS_PER_SHEET = 1048500;
+    private static final int ROW_ACCESS_WINDOW_SIZE = 100;
+    private static final String STYLE_INTEGER = "integer";
+    private static final String STYLE_DECIMAL = "decimal";
+    private static final String STYLE_HEADER = "header";
 
-		CellStyle integerStyle = configCellStyleNumeric(workbook, false);
-		CellStyle decimalStyle = configCellStyleNumeric(workbook, true);
+    public <T> byte[] generateExcelFile(String sheetName, int minWidth, List<T> dataList) throws IOException, IllegalAccessException {
+        if (dataList == null || dataList.isEmpty()) {
+            throw new IllegalArgumentException("데이터 목록이 비어있습니다.");
+        }
 
-		for (int rowIndex = 0; rowIndex < dataList.size(); rowIndex++) {
-			createDataRow(sheet, rowIndex + 1, dataList.get(rowIndex), cellValues, integerStyle, decimalStyle);
-		}
+        // 1. 대상 클래스의 필드 중 @ExcelColumn 애너테이션이 붙은 필드 추출 및 정렬
+        Class<?> clazz = dataList.getFirst().getClass();
+        List<Field> excelFields = Arrays.stream(clazz.getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(ExcelColumn.class))
+                .sorted(Comparator.comparingInt(field -> field.getAnnotation(ExcelColumn.class).order()))
+                .toList();
 
-		adjustColumnWidth(cellValues, minWidth, sheet);
-	}
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(ROW_ACCESS_WINDOW_SIZE);
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-	private void createHeaderRow(Sheet sheet, Map<String, String> cellValues) {
-		Row headerRow = sheet.createRow(0);
-		int cellIndex = 0;
-		for (String header : cellValues.values()) {
-			headerRow.createCell(cellIndex++).setCellValue(header);
-		}
-	}
+            workbook.setCompressTempFiles(true);
+            Map<String, CellStyle> styles = createCommonCellStyles(workbook);
 
-	private void createDataRow(Sheet sheet, int rowNum, Map<String, Object> dataMap, Map<String, String> cellValues, CellStyle integerStyle, CellStyle decimalStyle) {
-		Row dataRow = sheet.createRow(rowNum);
-		int cellIndex = 0;
-		for (String key : cellValues.keySet()) {
-			Cell cell = dataRow.createCell(cellIndex++);
-			Object value = dataMap.get(key);
-			setCellValue(cell, value, integerStyle, decimalStyle);
-		}
-	}
+            Sheet currentSheet = null;
+            int currentSheetIndex = 1;
+            int currentRowNum = 0;
 
-	private void setCellValue(Cell cell, Object value, CellStyle integerStyle, CellStyle decimalStyle) {
-		if (value == null) {
-			cell.setCellValue("");
-		} else if (value instanceof String stringValue) {
-			cell.setCellValue(stringValue);
-		} else if (value instanceof Number numValue) {
-			if (value instanceof Integer || value instanceof Long) {
-				cell.setCellValue(numValue.longValue());
-				cell.setCellStyle(integerStyle);
-			} else {
-				cell.setCellValue(numValue.doubleValue());
-				cell.setCellStyle(decimalStyle);
-			}
-		} else {
-			cell.setCellValue(value.toString());
-		}
-	}
+            for (T data : dataList) {
+                if (currentSheet == null || currentRowNum >= MAX_ROWS_PER_SHEET) {
+                    if (currentSheet != null) {
+                        adjustColumnWidth(excelFields, minWidth, currentSheet);
+                    }
+
+                    String sheetNameNew = currentSheetIndex == 1 ? sheetName : sheetName + "_" + currentSheetIndex;
+                    currentSheet = workbook.createSheet(sheetNameNew);
+
+                    createHeaderRow(currentSheet, excelFields, styles.get(STYLE_HEADER));
+                    currentRowNum = 1;
+                    currentSheetIndex++;
+                }
+
+                createDataRow(currentSheet, currentRowNum++, data, excelFields, styles);
+            }
+
+            if (currentSheet != null) {
+                adjustColumnWidth(excelFields, minWidth, currentSheet);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    private Map<String, CellStyle> createCommonCellStyles(Workbook workbook) {
+        Map<String, CellStyle> styles = new HashMap<>();
+
+        // Header Style
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerStyle.setFont(headerFont);
+        headerStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        styles.put(STYLE_HEADER, headerStyle);
+
+        // Integer Style
+        CellStyle integerStyle = workbook.createCellStyle();
+        DataFormat format = workbook.createDataFormat();
+        integerStyle.setDataFormat(format.getFormat("#,##0"));
+        styles.put(STYLE_INTEGER, integerStyle);
+
+        // Decimal Style
+        CellStyle decimalStyle = workbook.createCellStyle();
+        decimalStyle.setDataFormat(format.getFormat("#,##0.00")); // Example format for decimals
+        styles.put(STYLE_DECIMAL, decimalStyle);
+
+        return styles;
+    }
+
+    private void createHeaderRow(Sheet sheet, List<Field> fields, CellStyle headerStyle) {
+        Row headerRow = sheet.createRow(0);
+        int cellIndex = 0;
+        for (Field field : fields) {
+            ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
+            Cell cell = headerRow.createCell(cellIndex++);
+            cell.setCellValue(annotation.headerName());
+            cell.setCellStyle(headerStyle);
+        }
+    }
+
+    private <T> void createDataRow(Sheet sheet, int rowNum, T data, List<Field> fields, Map<String, CellStyle> styles) throws IllegalAccessException {
+        Row dataRow = sheet.createRow(rowNum);
+        int cellIndex = 0;
+        for (Field field : fields) {
+            Cell cell = dataRow.createCell(cellIndex++);
+            Object value = field.get(data); // 리플렉션을 활용해 런타임에 필드값 획득
+            setCellValue(cell, value, styles);
+        }
+    }
+
+    private void setCellValue(Cell cell, Object value, Map<String, CellStyle> styles) {
+        if (value == null) {
+            cell.setCellValue("");
+        } else if (value instanceof String stringValue) {
+            cell.setCellValue(stringValue);
+        } else if (value instanceof Number numValue) {
+            if (value instanceof Integer || value instanceof Long) {
+                cell.setCellValue(numValue.longValue());
+                cell.setCellStyle(styles.get(STYLE_INTEGER));
+            } else {
+                cell.setCellValue(numValue.doubleValue());
+                cell.setCellStyle(styles.get(STYLE_DECIMAL));
+            }
+        } else {
+            cell.setCellValue(value.toString());
+        }
+    }
+
+    private void adjustColumnWidth(List<Field> fields, int minWidth, Sheet sheet) {
+        int colIndex = 0;
+        for (Field field : fields) {
+            String headerName = field.getAnnotation(ExcelColumn.class).headerName();
+            int calculatedWidth = Math.max(minWidth, headerName.length() * 2 + 5);
+            sheet.setColumnWidth(colIndex, calculatedWidth * 256);
+            colIndex++;
+        }
+    }
 }

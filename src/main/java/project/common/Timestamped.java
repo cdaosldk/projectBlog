@@ -1,4 +1,4 @@
-package project.blog;
+package project.common;
 
 import java.time.LocalDateTime;
 import jakarta.persistence.EntityListeners;

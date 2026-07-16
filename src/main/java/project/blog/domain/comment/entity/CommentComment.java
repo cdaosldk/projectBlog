@@ -1,6 +1,6 @@
 package project.blog.domain.comment.entity;
 
-import project.blog.Timestamped;
+import project.common.Timestamped;
 import project.blog.domain.user.entity.User;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

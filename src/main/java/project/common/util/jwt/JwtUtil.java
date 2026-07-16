@@ -14,6 +14,7 @@ import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -111,5 +112,29 @@ public class JwtUtil {
   public Authentication createAuthentication(String username) {
     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
     return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+  }
+
+  // RefreshToken을 쿠키에서 추출
+  public String resolveRefreshTokenFromCookies(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies == null) { // 쿠키가 없는 경우 null 반환
+      return null;
+    }
+    String resolveRefreshToken = null;
+    for (Cookie cookie : cookies) {
+      if (cookie.getName().equals("refreshToken")) {
+        resolveRefreshToken = cookie.getValue();
+        break; // 찾았으면 루프 종료
+      }
+    }
+    return resolveRefreshToken;
+  }
+
+  // RefreshToken 값을 분리 (토큰 값과 사용자 이름)
+  public String[] separateRefreshToken(String cookieValue) {
+    if (cookieValue == null || !cookieValue.contains(":")) { // null 체크 및 형식 확인
+      return new String[]{null, null}; // 유효하지 않은 경우 null 반환
+    }
+    return cookieValue.split(":");
   }
 }

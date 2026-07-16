@@ -2,31 +2,41 @@ package project.blog.domain.user.service;
 
 import project.blog.domain.user.dto.LoginRequestDto;
 import project.blog.domain.user.dto.SignupRequestDto;
+import project.blog.domain.user.dto.UserResponseDto;
 import project.blog.domain.user.entity.User;
 import project.blog.domain.user.entity.UserRoleEnum;
 import project.blog.domain.user.repository.UserRepository;
-import project.common.util.jwt.JwtAuthFilter;
 import project.common.util.jwt.JwtUtil;
+
+import java.util.List;
 import java.util.regex.Pattern;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-  private final UserRepository userRepository;
+  private static final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
 
   private final JwtUtil jwtUtil;
-
-  private final JwtAuthFilter jwtAuthFilter;
-
+  private final UserRepository userRepository;
   private final RefreshTokenService refreshTokenService;
 
-  private static final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
+  public List<UserResponseDto> getUserList() {
+    List<User> userList = userRepository.findAll();
+
+    return userList.stream().map(user -> new UserResponseDto(
+        user.getId(),
+        user.getUsername(),
+        user.getEmail()
+    )).toList();
+  }
 
   @Transactional
   public void signup(SignupRequestDto signupRequestDto) {
@@ -40,10 +50,10 @@ public class UserService {
     String usernamePattern = "^[a-z0-9]{4,10}$";
     String pwdPattern = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,15}$";
     if (!Pattern.matches(usernamePattern, username)) {
-      throw new IllegalArgumentException("조건에 일지하지 않는 아이디입니다. 아이디를 다시 확인해주세요.");
+      throw new IllegalArgumentException("조건에 일치하지 않는 아이디입니다. 아이디를 다시 확인해주세요.");
     }
     if (!Pattern.matches(pwdPattern, password)) {
-      throw new IllegalArgumentException("조건에 일지하지 않는 비밀번호입니다. 비밀번호를 다시 확인해주세요.");
+      throw new IllegalArgumentException("조건에 일치하지 않는 비밀번호입니다. 비밀번호를 다시 확인해주세요.");
     }
 
     // 사용자 ROLE 확인
@@ -79,9 +89,14 @@ public class UserService {
 
   public void logout(HttpServletRequest request, HttpServletResponse response) {
     response.setHeader(JwtUtil.AUTHORIZATION_HEADER, null);
-    refreshTokenService.deleteRefreshToken(refreshTokenService.findById(
-        jwtAuthFilter.separateRefreshToken(
-            jwtAuthFilter.resolveRefreshTokenFromCookies(request))[0]));
+    String refreshTokenCookieValue = jwtUtil.resolveRefreshTokenFromCookies(request);
+    String[] separatedRefreshToken = jwtUtil.separateRefreshToken(refreshTokenCookieValue);
+
+    if (separatedRefreshToken != null && separatedRefreshToken.length > 0 && separatedRefreshToken[0] != null) {
+        refreshTokenService.deleteRefreshToken(refreshTokenService.findById(separatedRefreshToken[0]));
+    } else {
+        log.warn("Refresh token not found or malformed during logout for request: {}. RefreshTokenCookieValue: {}", request.getRequestURI(), refreshTokenCookieValue);
+    }
   }
 
   private User findByUsername(String username) {

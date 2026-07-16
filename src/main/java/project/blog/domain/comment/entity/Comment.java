@@ -1,6 +1,6 @@
 package project.blog.domain.comment.entity;
 
-import project.blog.Timestamped;
+import project.common.Timestamped;
 import project.blog.domain.comment.dto.CommentRequestDto;
 import project.blog.domain.post.entity.Post;
 import project.blog.domain.user.entity.User;

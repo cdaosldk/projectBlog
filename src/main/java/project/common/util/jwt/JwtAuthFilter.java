@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +27,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
     String resolveAccessToken = jwtUtil.resolveAccessToken(request);
-    String refreshToken = separateRefreshToken(resolveRefreshTokenFromCookies(request))[0];
-    String username = separateRefreshToken(resolveRefreshTokenFromCookies(request))[1];
+
+    // JwtUtil의 메서드를 사용하여 RefreshToken 처리
+    String refreshTokenCookieValue = jwtUtil.resolveRefreshTokenFromCookies(request);
+    String[] separatedRefreshToken = jwtUtil.separateRefreshToken(refreshTokenCookieValue);
+
+    String refreshToken = null;
+    String username = null;
+
+    if (separatedRefreshToken != null && separatedRefreshToken.length > 1) {
+        refreshToken = separatedRefreshToken[0];
+        username = separatedRefreshToken[1];
+    }
+
 
     if (resolveAccessToken != null) {
       if (!jwtUtil.validateAccessToken(resolveAccessToken) && jwtUtil.checkExpirationToken(
@@ -47,21 +57,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     context.setAuthentication(authentication);
 
     SecurityContextHolder.setContext(context);
-  }
-
-  public String resolveRefreshTokenFromCookies(HttpServletRequest request) {
-    Cookie[] cookies = request.getCookies();
-    String resolveRefreshToken = null;
-    for (Cookie cookie : cookies) {
-      if (cookie.getName().equals("refreshToken")) {
-        resolveRefreshToken = cookie.getValue();
-      }
-    }
-    return resolveRefreshToken;
-  }
-
-  public String[] separateRefreshToken(String cookieValue) {
-    return cookieValue.split(":");
   }
 
   // 토큰 오류가 발생한 경우, Exception 결과값을 사용자에게 반환한다

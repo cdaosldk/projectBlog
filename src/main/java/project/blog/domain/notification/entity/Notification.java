@@ -1,6 +1,6 @@
 package project.blog.domain.notification.entity;
 
-import project.blog.Timestamped;
+import project.common.Timestamped;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

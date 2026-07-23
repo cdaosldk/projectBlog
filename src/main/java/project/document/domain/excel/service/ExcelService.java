@@ -91,7 +91,7 @@ public class ExcelService {
 
         // Decimal Style
         CellStyle decimalStyle = workbook.createCellStyle();
-        decimalStyle.setDataFormat(format.getFormat("#,##0.00")); // Example format for decimals
+        decimalStyle.setDataFormat(format.getFormat("#,##0.00"));
         styles.put(STYLE_DECIMAL, decimalStyle);
 
         return styles;

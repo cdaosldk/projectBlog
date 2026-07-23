@@ -28,7 +28,7 @@
 
 # Used Case
 
-[blogUsecase.drawio](blogUsecase.drawio)
+![blogUsecase.drawio.svg](blogUsecase.drawio.svg)
 
 # ERD
 
